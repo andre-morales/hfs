@@ -1,0 +1,1 @@
+call "%NODE_HOME%\npm.cmd" %*

@@ -1,0 +1,71 @@
+#files {
+	height: auto;
+
+}
+#files table {
+	width: 100%;
+}
+#files tr {
+}
+#files td {
+	border-top: solid 1px #C0C0C0;
+}
+
+.menu-wrapper span {
+	display: block;
+	box-sizing: border-box;
+	padding: 0px 4px 0 0;
+}
+.menu-wrapper span button {
+	width: 26px;
+	height: 38px;
+	display: block;
+	color: black;
+	background: white;
+	border: solid 1px gray;
+}
+#context-menu {
+	display: none;
+}
+.menu-wrapper #context-menu {
+	display: block;
+	position: absolute;
+	background: white;
+	z-index: 1;
+}
+.menu-wrapper #context-menu a {
+	border: solid 1px gray;
+}
+.menu-wrapper #context-menu a {
+	display: block;
+	padding: 4px 16px;
+}
+.menu-wrapper #context-menu a:hover {
+	background: #00A0F0;
+}
+.menu-wrapper #context-menu #cm-close {
+	padding: 0;
+}
+.menu-wrapper #cm-watch {color: gray;}
+.menu-wrapper .watchable #cm-watch {color: black;}
+
+.FileLink {
+	width: 100%;
+}
+.FileImg img {
+	display: block;
+	margin: 4px 4px 4px 0;
+}
+
+#files a {
+	font-size: 13pt;
+	font-family: 'Segoe UI', 'Tahoma', 'Verdana', 'Arial', sans-serif;
+	font-weight: 300;
+	vertical-align: middle;
+}
+.color-1 {
+	background: white;
+}
+.color-2 {
+	background: #E0E0E0
+}

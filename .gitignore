@@ -1,0 +1,4 @@
+node_modules/
+cert/
+config.private.cnf
+package-lock.json

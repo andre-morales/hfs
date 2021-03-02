@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<%- include('head.ejs'); %>
+	<title>HFS - André</title>
+	<link rel="stylesheet" href="/res/css/folder_style.css" type="text/css">
+	<script>
+		var folder = '<%- folder %>';
+	</script>
+	<script src="/res/js/folder_script.js"></script>
+</head>
+<body onload="main();">
+	<h1><%- folder %></h1>
+	<form enctype="multipart/form-data" method="post">
+		<input type="file" name="file"/>
+		<input type="submit" name="fileSubmitForm" value="Upload"/>
+	</form>
+	<table cellspacing="0">
+		<tbody>
+			<tr>
+				<td><a href="../"><img src="/res/back.gif"/></a></td>
+				<td><a href="../">Back</a></td>
+				<td><a href="."><img src="/res/reload.gif"/></a></td>
+				<td><a href=".">Reload</a></td>
+			</tr>
+		</tbody>
+	</table>
+	<hr/>
+	
+	<div id="files">
+		<table cellspacing="0">
+			<tbody>
+			<%
+				genFileTableEntries();
+			%>
+			</tbody>
+		</table>
+	</div>
+	<div id="context-menu">
+		<a id="cm-close" href="javascript:cm_close();">Close</a>
+		<a id="cm-watch">Watch</a>
+		<a href="javascript:;">Delete</a>
+	</div>
+	<%- include ('footer.ejs') %>
+</body>
+</html>
+
+<%
+function genFileTableEntries(){
+	for (var i = 0; i < files.length; i++){
+		var pathName = files[i];
+
+		var color = (i % 2 == 1)?'color-1':'color-2';
+
+		if(pathName.endsWith('/')){
+			var folderName = pathName.slice(0, -1);
+			var pathURIName = encodeURIComponent(folderName);
+			genFileTableEntry(folderName, pathURIName + "/", 'folder', color);
+		} else {
+			var pathURIName = encodeURIComponent(pathName);
+			genFileTableEntry(pathName, pathURIName, 'file', color);
+		}
+	}
+}
+
+function genFileTableEntry(name, path, icon, rowColor){
+	%>
+		<tr class="<%-rowColor-%>">
+			<td class="menu-wrapper">
+				<span data-path="<%-path%>">
+					<button onclick="openContextMenu(this);">&nbsp;&gt;&nbsp;</button>
+				</span>
+			</td>
+			<td class="FileImg">
+				<a href="<%-path%>">
+					<img src="/res/<%-icon%>.gif" width="32" height="32"/>
+				</a>
+			</td>
+			<td class="FileLink">
+				<a href="<%-path%>"><%-name%></a>
+			</td>
+		</tr>
+	<%
+}
+
+%>

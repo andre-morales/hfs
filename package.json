@@ -1,0 +1,25 @@
+{
+  "name": "hfs__",
+  "version": "0.97.1",
+  "description": "HTTP File Server.",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andre-morales/hfs.git"
+  },
+  "author": "andre-morales",
+  "license": "UNLICENSED",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/andre-morales/hfs/issues"
+  },
+  "homepage": "https://github.com/andre-morales/hfs#readme",
+  "dependencies": {
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.2.1"
+  }
+}

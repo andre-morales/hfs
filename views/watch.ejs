@@ -1,0 +1,222 @@
+<% main(); %>
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<%- include ('head.ejs') %>
+	<title>HFS - André</title>
+	<link rel="stylesheet" href="/res/css/watch_style.css" type="text/css">
+	<!--<script src="/res/js/template_polyfill.js"></script>-->	
+	<script src="/res/js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript">
+		function loadMainSubtitles(){
+			loadTextTrack("<%-videoPath+videoName+' ja.vtt'%>", "ja", "Japanese");
+			loadTextTrack("<%-videoPath+videoName+' br.vtt'%>", "pt", "Portuguese");
+		}
+	</script>
+	<script src="/res/js/watch_script.js"></script>
+</head>
+<body onload="main();">
+	<a href="/files/">Home.</a>
+	<h1>Watch <%-videoName %></h1>
+	<hr/>
+	<figure class="video-container">
+		<div class="controls-overlay-wrapper">
+			<div class="controls-overlay">
+				<div class="cue-windows">
+					<div class="cue-window-config hide">
+						<table style="pointer-events: all;" cellspacing="0">
+							<tr>
+								<td colspan="5">Config <span class="title"></span></td>
+								<td colspan="1" style="text-align: right;">
+									<button onclick="cwc_close();">X</button>
+								</td>
+							</tr>
+							<tr>
+								<td>X Position: </td>
+								<td><button>&lt;</button></td>
+								<td colspan="2">
+									<input type="range" class="wx">
+								</td>
+								<td><button>&gt;</button></td>
+								<td class="val-wx">
+									
+								</td>
+							</tr>
+							<tr>
+								<td>Y Position: </td>
+								<td><button>&lt;</button></td>
+								<td colspan="2">
+									<input type="range" class="wy">
+								</td>
+								<td><button>&gt;</button></td>
+								<td class="val-wy">
+									
+								</td>
+							</tr>
+							<tr>
+								<td>Width: </td>
+								<td><button>&lt;</button></td>
+								<td colspan="2">
+									<input type="range" class="ww">
+								</td>
+								<td><button>&gt;</button></td>
+								<td class="val-ww">
+									
+								</td>
+							</tr>
+							<tr>
+								<td>Height: </td>
+								<td><button>&lt;</button></td>
+								<td colspan="2">
+									<input type="range" class="wh">
+								</td>
+								<td><button>&gt;</button></td>
+								<td class="val-wh">
+									
+								</td>
+							</tr>
+							<tr>
+								<td>Font size: </td>
+								<td><button>&lt;</button></td>
+								<td colspan="2">
+									<input type="range" class="font-size" min="4" max="96">
+								</td>
+								<td><button>&gt;</button></td>
+								<td class="val-font-size">
+									
+								</td>
+							</tr>
+							<tr>
+								<td>Delay: </td>
+								<td colspan="5">
+									<input type="text" class="timing-shift" style="width: 100%;"/>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6">
+									<label>
+										<input type="checkbox" class="flip-y-line" onclick="cwc_toggleYLineFlip(this);">
+									Flip Y line:
+									</label>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6" class="controls">
+									<table>
+										<td>
+											<button onclick="cwc_reset();">Reset</button>
+										</td>
+										<td>
+											<button onclick="cwc_apply();">Apply</button>
+										</td>
+										<td>
+											<button onclick="cwc_ok();">OK</button>
+										</td>
+									</table>
+								</td>
+							</tr>
+						</table>			
+					</div>
+					<template id="t_cue-window">
+						<div class="cue-window">
+							<div class="cue-window-internal"></div>
+						</div>
+					</template>
+				</div>
+				<table cellspacing="0">
+					<tr class="controls-row">
+						<td class="header"><h1><%-videoName %></h1></td>
+					</tr>
+					<tr style="height: 100%;"></tr>
+					<tr>
+						<td class="controls-row">
+							<input type="range" class="progressbar" value="0" step="any"/>
+						</td>
+					</tr>
+
+					<tr>
+						<td class="controls-row">
+							<table class="bottom-controls" cellspacing="0">
+								<td>							
+									<button class="button playbutton" onclick="video_togglePlay();"><span></span></button>
+								</td>
+								<td>
+									<button class="button mutebutton" onclick="video_toggleMute();"><span></span></button>
+								</td>
+								<td>
+									<input type="range" class="volumeslider" value="100" step="any">
+								</td>
+								<td style="width: 100%;"></td>
+								<td>
+									<span class="tt-contextmenu contextmenu-wrapper">
+										<button class="button ttbutton" onclick="Video.TextTracks.openMenu();"><span></span></button>
+										<div class="tt-main-menu contextmenu-content">
+											<div class="contextmenu-title">
+												<span>Text Tracks<span>
+											</div>
+											<hr/>
+											<table class="tt-list" cellspacing="0">
+												<template id="t_tt-list-item">
+													<tr>
+														<td class="contextmenu-item">
+															<label class="noselect checkbox">
+																<input type="checkbox" class="cc-enable-checkbox"/>
+																<span class="cc-label"></span>
+															</label>
+														</td>
+														<td class="contextmenu-item">
+															<button class="morebutton">...</button>
+														</td>	
+													</tr>
+												</template>
+											</table>
+											<hr/>
+											<div class="contextmenu-item">
+												<label class="checkbox">
+													<input type="checkbox" class="subtitlestoggle" onclick="toggleCaptioning(this);"/>
+													<span>Subtitles<span>
+												</label>
+											</div>
+											<div class="contextmenu-item">
+												<label class="checkbox">
+													<input type="checkbox" class="nativesubtitlestoggle" onclick="toggleNativeCaptionsDisplay(this);"/>
+													<span>Native display<span>
+												</label>
+											</div>
+										</div>
+									</span>
+								</td>
+								<td>
+									<button class="button fullscreenbutton" onclick="Video.toggleFullscreen();"><span></span></button>	
+								</td>
+								<td>
+									<label class="pintoggle">
+										<input type="checkbox" onclick="ui_togglePin(this);"/>Pin
+									</label>
+								</td>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>	
+		</div>
+		<video class="video" width="1920" height="1080" preload="metadata" onplay="Video.onPlay();" onpause="Video.onPause();" controls>
+			<source src="<%-_GET['p']%>" type="video/<%-videoExt%>">
+			<template id="t_track">
+				<track class="subtrack" kind="subtitles"/>
+			</template>
+			Video is not supported on this browser.
+		</video>
+	</figure>
+	<%- include ('footer.ejs') %>
+</body>
+</html>
+<%
+function main(){
+	var si = _GET['p'].lastIndexOf("/");
+	var di = _GET['p'].lastIndexOf(".");
+	videoPath = _GET['p'].substring(0, si + 1);
+	videoName = _GET['p'].substring(si + 1, di);
+	videoExt = _GET['p'].substring(di + 1);
+}
+%>
