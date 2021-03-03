@@ -50,10 +50,12 @@ var Video = {
 	toggleFullscreen: function(){
 		if (video_isFullScreen()) {
 			if (document.exitFullscreen) document.exitFullscreen();
+			else if (document.webkitCancelFullScreen) document.webkitCancelFullScreen();
 			this.$container.removeClass("fullscreen");
 		} else {
 			var vc = this.$container[0];
 			if (vc.requestFullscreen) vc.requestFullscreen();
+      		else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen();
 			this.$container.addClass("fullscreen");
 		}
 	},
@@ -241,7 +243,7 @@ function TextTrackConfig(){
 	var self = this;
 	this.reset = function(){
 		self.enabled = false;
-		self.window_x = 50;
+		self.window_x = 0;
 		self.window_y = 50;
 		self.window_w = 100;
 		self.window_h = 100;
@@ -282,10 +284,6 @@ var cueWindowConfig_ = {};
 var sliderHeld = false;
 var firstPlay = true;
 
-var ccStatus = {};
-
-var __TRACKID_COUNTER__ = 0;
-
 function main(){
 	resetCheckboxValues();
 
@@ -304,6 +302,23 @@ function main(){
 	cwc_f("font-size"); cwc_f("val-font-size");	
 	cwc_f("flip-y-line");	
 	cwc_f("timing-shift");	
+	var cwc_ss = function(n, shift){
+		var s = cueWindowConfig_[n];
+		var sli = s[0];
+		var p = s.parent();
+		p.prev().find("button").click(function(){
+			sli.value -= shift;
+			s.trigger('change');
+		});
+		p.next().find("button").click(function(){
+			sli.value = sli.value * 1.0 + shift;
+			s.trigger('change');
+		});
+	};
+	cwc_ss('wx', 1); cwc_ss('wy', 1);
+	cwc_ss('ww', 1); cwc_ss('wh', 1);
+	cwc_ss('font-size', 0.5);
+	cwc_ss('timing-shift', 0.5);
 	Video.$video[0].controls = false;
 
 
@@ -373,8 +388,8 @@ function resetCheckboxValues(){
 function updateCueWindowStyle(id){
 	var _window = Video.textTracks[id].$window;
 	var ttc = Video.textTracks[id].config;
-	var x = ttc.window_x * 1.0;
-	var y = ttc.window_y * 1.0;
+	var x = ttc.window_x * 1.0 + 50;
+	var y = -ttc.window_y * 1.0 + 50;
 	var w = ttc.window_w * 0.5;
 	var h = ttc.window_h * 0.5;
 	var fs = ttc.fontSize * 1.0;

@@ -1,5 +1,5 @@
 "use strict"
-const VERSION_STR = "Alpha 0.98.0";
+const VERSION_STR = "Alpha 0.98.1";
 
 // Imports
 const Path = require('path');

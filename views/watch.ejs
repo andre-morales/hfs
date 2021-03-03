@@ -50,34 +50,34 @@
 					<div class="cue-window-config hide">
 						<table style="pointer-events: all;" cellspacing="0">
 							<tr>
-								<td colspan="5">Config <span class="title"></span></td>
+								<td colspan="5"><span>&nbsp;Config&nbsp;</span><span class="title"/></td>
 								<td colspan="1" style="text-align: right;">
 									<button onclick="cwc_close();">X</button>
 								</td>
 							</tr>
-							<tr>
+							<tr class="number-setting">
 								<td>X Position: </td>
 								<td><button>&lt;</button></td>
 								<td colspan="2">
-									<input type="range" class="wx">
+									<input type="range" class="wx" min="-50" value="0" max="50">
 								</td>
 								<td><button>&gt;</button></td>
 								<td class="val-wx">
 									
 								</td>
 							</tr>
-							<tr>
+							<tr class="number-setting">
 								<td>Y Position: </td>
 								<td><button>&lt;</button></td>
 								<td colspan="2">
-									<input type="range" class="wy">
+									<input type="range" class="wy" min="-50" value="0" max="50">
 								</td>
 								<td><button>&gt;</button></td>
 								<td class="val-wy">
 									
 								</td>
 							</tr>
-							<tr>
+							<tr class="number-setting">
 								<td>Width: </td>
 								<td><button>&lt;</button></td>
 								<td colspan="2">
@@ -88,7 +88,7 @@
 									
 								</td>
 							</tr>
-							<tr>
+							<tr class="number-setting">
 								<td>Height: </td>
 								<td><button>&lt;</button></td>
 								<td colspan="2">
@@ -99,11 +99,11 @@
 									
 								</td>
 							</tr>
-							<tr>
+							<tr class="number-setting">
 								<td>Font size: </td>
 								<td><button>&lt;</button></td>
 								<td colspan="2">
-									<input type="range" class="font-size" min="4" max="96">
+									<input type="range" class="font-size" min="4" max="96" step="0.5">
 								</td>
 								<td><button>&gt;</button></td>
 								<td class="val-font-size">
@@ -112,15 +112,17 @@
 							</tr>
 							<tr>
 								<td>Delay: </td>
-								<td colspan="5">
+								<td><button>&lt;</button></td>
+								<td colspan="2">
 									<input type="text" class="timing-shift" style="width: 100%;"/>
 								</td>
+								<td colspan="2"><button>&gt;</button></td>
 							</tr>
 							<tr>
 								<td colspan="6">
 									<label>
 										<input type="checkbox" class="flip-y-line" onclick="cwc_toggleYLineFlip(this);">
-									Flip Y line:
+										<span>Flip Y line:</span>
 									</label>
 								</td>
 							</tr>

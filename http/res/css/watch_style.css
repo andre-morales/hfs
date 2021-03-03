@@ -272,6 +272,8 @@
 	height: 2rem;
 }
 .cue-window-config button {
+	padding: 2px;
+	border: solid 1px rgb(60, 60, 60);
 	background: rgba(50, 50, 50, 0.8);
 }
 .cue-window-config button:hover {
