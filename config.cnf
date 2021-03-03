@@ -1,4 +1,4 @@
-folder = files
+folder = http/files
 
 [http]
 port = 1100

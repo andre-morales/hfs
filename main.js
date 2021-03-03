@@ -1,5 +1,5 @@
 "use strict"
-const VERSION_STR = "Alpha 0.97.1";
+const VERSION_STR = "Alpha 0.98.0";
 
 // Imports
 const Path = require('path');
@@ -72,6 +72,7 @@ function setupHandlers(){
 	app.use((req, res, next) => {
 		var reqURL = decodeURI(req.url);
 		var filesSplit = reqURL.split('/');
+		var reqInsideFile = filesSplit.slice(2).join('/');
 		if(filesSplit[1] == 'v'){
 			const viewr = filesSplit.slice(2).join();
 			const viewsp = viewr.split('?');
@@ -86,9 +87,15 @@ function setupHandlers(){
 				var val = kmv.substring(ioe + 1);
 				GETValueMap[key] = decodeURIComponent(val);
 			}
-			res.render(viewsp[0], {'_GET' : GETValueMap});
+			res.render(viewsp[0], {
+				'_GET' : GETValueMap,
+				FS: FS,
+				Path: Path,
+				'System': {
+					config: config,
+				}
+			});
 		} else if(filesSplit[1] == 'files'){	
-			var reqInsideFile = filesSplit.slice(2).join('/');
 			var reqFilePath = Path.join(config.GLOBAL.folder, reqInsideFile);
 
 			if(req.method == 'GET'){
@@ -116,7 +123,7 @@ function setupHandlers(){
 				} else {
 					console.log("Unknown form submit. " + req.files);
 				}
-				res.render('folder.eta', {
+				res.render('folder', {
 					'folder': reqURL,
 					'files': getFileMap(reqFilePath)
 				});
@@ -128,7 +135,7 @@ function setupHandlers(){
 				if (FS.existsSync(reqFilePath)) {
 					var type = FS.lstatSync(reqFilePath);
 					if(type.isDirectory()){
-						res.render('folder.eta', {
+						res.render('folder', {
 							'folder': reqURL,
 							'files': getFileMap(reqFilePath)
 						});

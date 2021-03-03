@@ -5,7 +5,7 @@
 	font-family: 'Arial', sans-serif;
 	font-size: 2.2rem;
 }
-.cue-windows {
+.tt-window-container {
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -15,17 +15,17 @@
 	height: 100%;
 	overflow: hidden;
 }
-.cue-window {
+.tt-window {
 	position: absolute;
 	top: 0;
 	bottom: 0;
 	left: 0;
 	right: 0;
 }
-.cue-window.highlighted {
+.tt-window.highlighted {
 	border: solid 3px rgba(255, 20, 20, 0.75);
 }
-.cue-window-internal {
+.tt-window-internal {
 	position: relative;
 	width: 100%;
 	height: 100%;
@@ -54,7 +54,7 @@
 	width: 100%;
 	height: 100%;
 }
-.video {
+.video-container video {
 	width: 100%;
 	height: 100%;
 }
@@ -80,10 +80,10 @@
 	height: 100%;
 }
 .controls-row { 
-	transition: opacity 100ms linear 0s;
+	transition: opacity 50ms ease-out 0s;
 }
 .controls-row.opacity-0 {
-	transition: opacity 200ms linear 2s;
+	transition: opacity 200ms linear 1.5s;
 }
 .controls-overlay .controls-row {
 	pointer-events: all;
@@ -134,43 +134,44 @@
 }
 
 /* Play/Pause button */
-.bottom-controls .playbutton span {
+.video-container .playbutton span {
 	background-image: url('/res/play.png');
 }
-.video-container.playing .bottom-controls .playbutton span {
+.video-container.playing .playbutton span {
 	background-image: url('/res/pause.png');
 }
 
 /* Mute/Unmute button */
-.bottom-controls .mutebutton span {
+.video-container .mutebutton span {
 	background-image: url('/res/sound.png');
 }
-.video-container.muted .bottom-controls .mutebutton span {
+.video-container.muted .mutebutton span {
 	background-image: url('/res/muted.png');
 }
 
-.bottom-controls .volumeslider {
+.video-container .volumeslider {
 	display: block;
 }
 
-.bottom-controls .tt-contextmenu {
+.video-container .tt-contextmenu {
 	display: block;
 	position: relative;
 	height: 100%;
 	width: auto;
 }
-.bottom-controls .ttbutton span {
+.video-container .ttbutton span {
 	background-image: url('/res/cc.png');
 }
-
-.bottom-controls .fullscreenbutton span {
+.video-container .pinbutton span {
+	background-image: url('/res/notpinned.png');
+}
+.video-container.pinnedcontrols .pinbutton span {
+	background-image: url('/res/pinned.png');
+}
+.video-container .fullscreenbutton span {
 	background-image: url('/res/fullscreen.png');
 }
-.bottom-controls .pintoggle {
-	white-space: nowrap;
-	color: white;
-}
-.video-container.fullscreen .bottom-controls .fullscreenbutton span {
+.video-container.fullscreen .fullscreenbutton span {
 	background-image: url('/res/exitfullscreen.png');
 }
 /* Style for the Text Tracks context menu */
@@ -185,7 +186,7 @@
 }
 .tt-main-menu {
 	bottom: calc(100% + 0.5rem);
-	width: 10rem;
+	
 }
 .tt-main-menu div.contextmenu-title {
 	display: block;

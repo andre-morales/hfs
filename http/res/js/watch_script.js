@@ -3,18 +3,48 @@ var Video = {
 	$container: null,
 	$video: null,
 	$bottomControls: null,
+	$controlRows: null,
 	$progressbar: null,
-	$volumeslider: null,
+	$volumeslider: null,	
+	pinnedControls: false,
+	showingControls: true,
 	
+
 	TextTracks: {
+		enabled: false,
+		nativeTTDisplay: false,
+		$ttList: null,
+		$ttWindowContainer: null,
 		openMenu: function(){
 			$('.tt-main-menu').addClass("show");
+		},
+		setEnabled: function(bool){
+			this.enabled = bool;
+			for(var id in Video.textTracks){
+				var t = Video.textTracks[id];
+				t._updateMode();
+			}
+		},
+		setNativeTTDisplay: function(bool){
+			Video.nativeTTDisplay = bool;
+			for(var id in Video.textTracks){
+				var t = Video.textTracks[id];
+				t._updateMode();
+			}
+		},
+		init: function(){
+			this.$ttList = $(".tt-list");
+			this.$ttWindowContainer = $(".tt-window-container");	
 		}
 	},
-	textTracks: [],
+	textTracks: {},
 
 	TextTrackEditor: {
-		element: null
+		ttId: 0,
+
+		currentConfig: function(){
+			return Video.textTracks[this.ttId].config;
+		},
 	},
 
 	toggleFullscreen: function(){
@@ -27,6 +57,38 @@ var Video = {
 			this.$container.addClass("fullscreen");
 		}
 	},
+	togglePlay: function(){
+		if(!this.$progressbar) return;
+
+		var progress_ = this.$progressbar[0];
+		var video_ = this.$video[0];
+		if(firstPlay){
+			video_.currentTime = progress_.value * video_.duration / 100.0;
+			firstPlay = false;
+		}
+		if(video_.ended || video_.paused){
+			video_.play();
+		} else {
+			video_.pause();
+		}
+	},
+	toggleMute: function(){
+		var video_ = this.$video[0];
+		if(video_.muted = !video_.muted){
+			this.$container.addClass("muted");
+		} else {
+			this.$container.removeClass("muted");
+		}
+	},
+	
+	togglePinControls: function(){
+		this.pinnedControls = !this.pinnedControls;
+		if(this.pinnedControls){
+			this.$container.addClass("pinnedcontrols");
+		} else {
+			this.$container.removeClass("pinnedcontrols");
+		}
+	},
 
 	onPlay: function(){
 		this.$container.addClass("playing");
@@ -35,32 +97,191 @@ var Video = {
 		this.$container.removeClass("playing");
 	},
 
-	findElements: function(){
-		this.$video = this.$container.find('.video');
+	init: function(){
+		this.$video = this.$container.find('video');
+		this.$controlRows = this.$container.find(".controls-row");
 		this.$bottomControls = this.$container.find('.bottom-controls');
-		this.$progressbar = this.$container.find('.progressbar');
-		this.$volumeslider = this.$bottomControls.find('.volumeslider')
+		this.$progressbar = this.$controlRows.find('.progressbar');
+		this.$volumeslider = this.$bottomControls.find('.volumeslider');
+		this.TextTracks.init();
+
+		this.$controlRows.hover(function(){
+			if(!Video.pinnedControls && Video.showingControls){
+				Video.showingControls = false;
+				Video.$controlRows.removeClass("opacity-0");
+			}
+		}, function(){
+			if(!Video.pinnedControls && !Video.showingControls){
+				Video.showingControls = true;
+				Video.$controlRows.addClass("opacity-0");
+			}
+		});
 	}
 };
 
 function TextTrack(id, src, lang, label){
+	var self = this;
 	this.id = id;
 	this.lang = lang;
 	this.label = label;
+
+	// Creates track tag under video tag.
+	this.$track = templateOf("t_track");
+	this.$track.load(function(){
+		self.applyTimingShift();
+	});
+	this.$track.attr("src", src);
+	this.$track.attr("srclang", lang);
+	this.$track.attr("label", label);
+	this.$track.attr("data-track-id", id);
+	Video.$video.append(this.$track);
+	this.texttrack = this.$track[0].track;
+
+	// Create cues window.
+	this.$window = templateOf("t_tt-window");
+	this.$insideWindow = this.$window.find(".tt-window-internal");
+	Video.TextTracks.$ttWindowContainer.append(this.$window);
+
+	this.$ttListItem = templateOf("t_tt-list-item");
+	this.$enableCheckbox = this.$ttListItem.find(".cc-enable-checkbox");
+	Video.TextTracks.$ttList.append(this.$ttListItem);
+
+	this.$enableCheckbox.bind('click', function(){		
+		self.setEnabled(this.checked);
+		saveCCStatus();
+	});
+	this.setEnabled = function(bool){
+		this.config.enabled = bool;
+		this._updateMode();
+	};
+	this._updateMode = function(){
+		if(this.config.enabled && Video.TextTracks.enabled){
+			if(Video.nativeTTDisplay){
+				this.texttrack.mode = 'showing';
+				this.$window.addClass("hide");
+			} else {
+				this.texttrack.mode = 'hidden';
+				this.$window.removeClass("hide");
+			}
+		} else {
+			this.texttrack.mode = 'disabled';
+			this.$window.addClass("hide");
+		}	
+	};
+	this.applyTimingShift = function(){
+		if(this.currentTimingShift == this.config.timingShift) return;
+		if(!this.texttrack.cues) return;
+		if(this.texttrack.cues.length == 0) return;
+		this.currentTimingShift = this.config.timingShift;
+		var i = 0;
+		var cuesB = [];
+		while(this.texttrack.cues.length > 0){
+			var cue = this.texttrack.cues[0];
+			var oStart;
+			var oEnd;
+			if(!cue.oStartTime){
+				cue.oStartTime = cue.startTime;
+				cue.oEndTime = cue.endTime;
+			}
+			oStart = cue.oStartTime;
+			oEnd = cue.oEndTime;
+
+			this.texttrack.removeCue(cue);
+			cue.startTime = oStart + this.config.timingShift;
+			cue.endTime = oEnd + this.config.timingShift;
+			cuesB.push(cue);
+			i++;
+		}
+		for(i = 0; i < cuesB.length; i++){
+			this.texttrack.addCue(cuesB[i]);
+		}
+
+	};
+	this.updateCues = function(){
+		var cueWindow = this.$insideWindow;
+		var textTrack = this.texttrack;
+		cueWindow.empty();
+
+		var ac = textTrack.activeCues.length;
+		for(var i = 0; i < ac; i++){
+			var cue = textTrack.activeCues[i];
+			var liney = cue.line;
+			var str = cue.text;
+			var cuetag = $('<span class="cue"></span>').html(str.replace('\n', '<br/>'));
+			
+			cueWindow.append(cuetag);
+			if(this.config.lineYFlip){
+				liney = 100 - liney;
+			}
+				
+			if(liney > 50){
+				cuetag.css("top",    liney         + "%");
+				cuetag.css("bottom", 0             + "%");
+			} else {
+				cuetag.css("bottom", (100 - liney) + "%");
+				cuetag.css("top",    0             + "%");
+			}
+		}	
+	};
+	this.currentTimingShift = 0;
+	this.config = new TextTrackConfig();
+	this.config.id = id;
+
+	this.texttrack.addEventListener('cuechange', function(){
+		if(!self.config.enabled) return;
+
+		/*if(self.currentTimingShift != self.config.timingShift){
+			self.applyTimingShift();
+		}*/
+		self.updateCues();
+	});
 }
 
+function TextTrackConfig(){
+	var self = this;
+	this.reset = function(){
+		self.enabled = false;
+		self.window_x = 50;
+		self.window_y = 50;
+		self.window_w = 100;
+		self.window_h = 100;
+		self.fontSize = 20;
+		self.timingShift = 0.0;
+		self.lineYFlip = false;
+	};
+	this.toJSON = function(){
+		return {
+			en: (self.enabled)?1:0,
+			wx: self.window_x,
+			wy: self.window_y,
+			ww: self.window_w,
+			wh: self.window_h,
+			fs: self.fontSize,
+			ts: self.timingShift,
+			yf: (self.lineYFlip)?1:0,
+		};
+	};
+	this.fromJSON = function(src){
+		var tt = Video.textTracks[this.id];
+
+		self.enabled = (src.en == 1);
+		self.window_x = src.wx * 1.0;
+		self.window_y = src.wy * 1.0;
+		self.window_w = src.ww * 1.0;
+		self.window_h = src.wh * 1.0;
+		self.fontSize = src.fs * 1.0;
+		self.timingShift = src.ts * 1.0;
+		self.lineYFlip = (src.yf == 1);
+		tt.$enableCheckbox[0].checked = self.enabled;
+	};
+	this.reset();
+}
 
 var cueWindowConfig = null;
 var cueWindowConfig_ = {};
 var sliderHeld = false;
-var subtitlesEnabled = false;
-var nativeSubtitlesEnabled = false;
 var firstPlay = true;
-var hidingControls = false;
-var pinnedControls = true;
 
-var curCCTrack;
-var ccTracks = {};
 var ccStatus = {};
 
 var __TRACKID_COUNTER__ = 0;
@@ -69,7 +290,7 @@ function main(){
 	resetCheckboxValues();
 
 	Video.$container = $('.video-container');
-	Video.findElements();	
+	Video.init();	
 
 	cueWindowConfig = $('.cue-window-config');
 	var cwc_f = function(q){
@@ -84,10 +305,7 @@ function main(){
 	cwc_f("flip-y-line");	
 	cwc_f("timing-shift");	
 	Video.$video[0].controls = false;
-	
-	for (var i = 0; i < Video.$video[0].textTracks.length; i++) {
-		Video.$video[0].textTracks[i].mode = 'hidden';
-	}
+
 
 	// -- Progress Bar --
 	Video.$progressbar.bind('onmousedown', function(){ sliderHeld = true; });
@@ -132,32 +350,15 @@ function main(){
 			}
 		}
 	});
+
 	
-	$(".controls-row").hover(function(){
-		if(pinnedControls) return;
-
-		if(hidingControls){
-			hidingControls = false;
-			$(".controls-row").removeClass("opacity-0");
-		}
-	}, function(){
-		if(pinnedControls) return;
-
-		if(!hidingControls){
-			hidingControls = true;
-			$(".controls-row").addClass("opacity-0");
-		}
-	});
-
-	loadCCStatus();
 	loadMainSubtitles();
+	loadCCStatus();
 
 	for(var i = 0; ; i++){
-		if(!ccStatus[i]) break;
+		if(!Video.textTracks[i]) break;
 		updateCueWindowStyle(i);
 	}
-
-	ui_togglePin($(".pintoggle input")[0]);
 }
 
 
@@ -170,13 +371,13 @@ function resetCheckboxValues(){
 }
 
 function updateCueWindowStyle(id){
-	var _window = ccTracks[id]['window'];
-	var ccs = ccStatus[id];
-	var x = ccs['wx'] * 1.0;
-	var y = ccs['wy'] * 1.0;
-	var w = ccs['ww'] * 0.5;
-	var h = ccs['wh'] * 0.5;
-	var fs = ccs['fs'] * 1.0;
+	var _window = Video.textTracks[id].$window;
+	var ttc = Video.textTracks[id].config;
+	var x = ttc.window_x * 1.0;
+	var y = ttc.window_y * 1.0;
+	var w = ttc.window_w * 0.5;
+	var h = ttc.window_h * 0.5;
+	var fs = ttc.fontSize * 1.0;
 	_window.css("left",   ( x         - w) + "%");
 	_window.css("right",  (-x + 100.0 - w) + "%");
 	_window.css("top",    ( y         - h) + "%");
@@ -184,220 +385,75 @@ function updateCueWindowStyle(id){
 	_window.css("font-size", fs + "pt");
 }
 
-function video_togglePlay(){
-	var progress_ = Video.$progressbar[0];
-	var video_ = Video.$video[0];
-	if(firstPlay){
-		video_.currentTime = progress_.value * video_.duration / 100.0;
-		firstPlay = false;
-	}
-	if(video_.ended || video_.paused){
-		video_.play();
-	} else {
-		video_.pause();
-	}	
-}
-
-
-
-function video_toggleMute(){
-	video.muted = !video.muted;
-	if(video.muted){
-		videoContainer.addClass("muted");
-	} else {
-		videoContainer.removeClass("muted");
-	}	
-}
-
 function video_isFullScreen() {
 	return !!(document.fullscreen || document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement || document.fullscreenElement);
 }
 
-function ui_togglePin(ctx){
-	pinnedControls = ctx.checked;
-	if(pinnedControls){
-		if(hidingControls){
-			hidingControls = false;	
-			$(".controls-row").removeClass("opacity-0");
-		} 
-	}
-}
+function loadTextTrack(id, src, lang, label){
+	Video.textTracks[id] = new TextTrack(id, src, lang, label);
 
-function loadTextTrack(src, lang, label){
-	var id = __TRACKID_COUNTER__++;
-	Video.TextTracks[id] = new TextTrack(id, src, lang, label);
-
-	ccTracks[id] = {
-		'tracktag': null,
-		'texttrack': null,
-		'window': null,
-		'window-internal': null,
-		'label': label
-	};
-	if(!ccStatus[id]){
-		ccStatus[id] = getCCStyleDefaults();
-	}	
-
-	var cct = ccTracks[id];
-	var ccs = ccStatus[id];
-
-	// Creates Track element under Video tag.
-	cct['tracktag'] = templateOf("t_track");
-	cct['tracktag'].attr("src", src);
-	cct['tracktag'].attr("srclang", lang);
-	cct['tracktag'].attr("label", label);
-	cct['tracktag'].attr("data-track-id", id);
-	Video.$video.append(cct['tracktag']);
-
-	cct['texttrack'] = cct['tracktag'][0].track;
+	var ttt = Video.textTracks[id];
+	var ttc = ttt.config;
 
 	// Creates subitem on the captions menu on the bottom controls.
-	var subitem = templateOf("t_tt-list-item");
-	subitem.find(".cc-label").text(label);
-	var inputtag = subitem.find(".cc-enable-checkbox")[0];
-	inputtag.checked = ccs['en'];
-	addListener(inputtag, 'click', function(){
-		ccs['en'] = inputtag.checked;
-		updateTextTracksStatus();
-		saveCCStatus();
-	});
-	var morebtn = subitem.find(".morebutton");
+	
+	ttt.$ttListItem.find(".cc-label").text(label);
+	var morebtn = ttt.$ttListItem.find(".morebutton");
 	morebtn.click(function(){
-		curCCTrack = id;
+		Video.TextTrackEditor.ttId = id;
 		cueWindowConfig_['title'].text(label);
 		cwc_open();
 		updateCueWindowStyle(id);
 		$(".highlighted").removeClass("highlighted");
-		cct['window'].addClass('highlighted');
+		ttt.$window.addClass('highlighted');
 		cueWindowConfig.removeClass('hide');
 	});
-	$(".tt-list").append(subitem);
-
-	// Create cues window.
-	cct['window'] = templateOf("t_cue-window");
-	cct['window-internal'] = cct['window'].children().first()
-
-	$(".cue-windows").append(cct['window']);
-
-	var textTrack = cct['texttrack'];
-	var cueWindow = cct['window-internal'];
-	textTrack.addEventListener("cuechange", function(){
-		updateTrackCues(id, cueWindow, textTrack);
-	});
-}
-
-function updateTrackCues(id, cueWindow, textTrack){
-	cueWindow.empty();
-
-	var ac = textTrack.activeCues.length;
-	for(var i = 0; i < ac; i++){
-		var cue = textTrack.activeCues[i];
-		var liney = cue.line;
-		var str = cue.text;
-		var cuetag = $('<span class="cue"></span>').html(str.replace('\n', '<br/>'));
-		
-		cueWindow.append(cuetag);
-		if(ccStatus[id]['fy']){
-			liney = 100 - liney;
-		}
-			
-		if(liney > 50){
-			cuetag.css("top",    liney         + "%");
-			cuetag.css("bottom", 0             + "%");
-		} else {
-			cuetag.css("bottom", (100 - liney) + "%");
-			cuetag.css("top",    0             + "%");
-		}
-	}	
-}
-
-function getCCStyleDefaults(){
-	return {
-		'en': 1,
-		'wx': 50,
-		'wy': 50,
-		'ww': 100,
-		'wh': 100,
-		'fs': 20,
-		'fy': 0,
-		'ts': 0,
-	};
-}
-
-function toggleCaptioning(ctx){
-	subtitlesEnabled = ctx.checked;
-	updateTextTracksStatus();
-}
-
-function toggleNativeCaptionsDisplay(ctx){
-	nativeSubtitlesEnabled = ctx.checked;
-	updateTextTracksStatus();
-}
-
-function updateTextTracksStatus(){
-	var tracks = $(".subtrack");
-	
-	for(var i = 0; i < tracks.length; i++){
-		var track = $(tracks[i]);
-		var textTrack = track[0].track;
-		var id = track.attr("data-track-id");
-		var cuesWindow = ccTracks[id]['window'];
-		if(ccStatus[id]['en'] && subtitlesEnabled){
-			if(nativeSubtitlesEnabled){
-				textTrack.mode = 'showing';
-				cuesWindow.addClass("hide");
-			} else {
-				textTrack.mode = 'hidden';
-				cuesWindow.removeClass("hide");
-			}
-		} else {
-			textTrack.mode = 'disabled';
-			cuesWindow.addClass("hide");
-		}	
-	}
 }
 
 /* -- Cue window configurator -- */
 function cwc_setup(){
+	var gcttc = function(){
+		return Video.textTracks[Video.TextTrackEditor.ttId].config;
+	};
 	addSliderChangeListener(cueWindowConfig_['wx'], function(t, e){
-		ccStatus[curCCTrack]['wx'] = t.val();
+		gcttc().window_x = t.val();
 		cueWindowConfig_["val-wx"].text(t.val());
-		updateCueWindowStyle(curCCTrack);
+		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wy'], function(t, e){
-		ccStatus[curCCTrack]['wy'] = t.val();
+		gcttc().window_y = t.val();
 		cueWindowConfig_["val-wy"].text(t.val());
-		updateCueWindowStyle(curCCTrack);
+		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['ww'], function(t, e){
-		ccStatus[curCCTrack]['ww'] = t.val();
+		gcttc().window_w = t.val();
 		cueWindowConfig_["val-ww"].text(t.val());
-		updateCueWindowStyle(curCCTrack);
+		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wh'], function(t, e){
-		ccStatus[curCCTrack]['wh'] = t.val();
+		gcttc().window_h = t.val();
 		cueWindowConfig_["val-wh"].text(t.val());
-		updateCueWindowStyle(curCCTrack);
+		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['font-size'], function(t, e){
-		ccStatus[curCCTrack]['fs'] = t.val();
+		gcttc().fontSize = t.val();
 		cueWindowConfig_["val-font-size"].text(t.val());
-		updateCueWindowStyle(curCCTrack);
+		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 }
 
 function cwc_open(){
-	var curStatus = ccStatus[curCCTrack];
-	var wx = curStatus['wx'];
-	var wy = curStatus['wy'];
-	var ww = curStatus['ww'];
-	var wh = curStatus['wh'];
-	var fs = curStatus['fs'];
+	var ttc = Video.textTracks[Video.TextTrackEditor.ttId].config;
+	var wx = ttc.window_x;
+	var wy = ttc.window_y;
+	var ww = ttc.window_w;
+	var wh = ttc.window_h;
+	var fs = ttc.fontSize;
 	cueWindowConfig_["wx"].val(wx);
 	cueWindowConfig_["val-wx"].text(wx);
 
@@ -413,56 +469,31 @@ function cwc_open(){
 	cueWindowConfig_["font-size"].val(fs);
 	cueWindowConfig_["val-font-size"].text(fs);
 
-	cueWindowConfig_["flip-y-line"][0].checked = curStatus['fy'];
-	cueWindowConfig_["timing-shift"].val(curStatus['ts']);
+	cueWindowConfig_["flip-y-line"][0].checked = ttc.lineYFlip;
+	cueWindowConfig_["timing-shift"].val(ttc.timingShift);
 }
 
 function cwc_toggleYLineFlip(ctx){
-	ccStatus[curCCTrack]['fy'] = ctx.checked;
-	var cct = ccTracks[curCCTrack];
-	updateTrackCues(curCCTrack, cct['window-internal'], cct['texttrack']);
-	saveCCStatus();
+	var ttt = Video.textTracks[Video.TextTrackEditor.ttId];
+	ttt.config.lineYFlip = ctx.checked;
+	ttt.updateCues();
 }
 
 function cwc_reset(){
-	ccStatus[curCCTrack] = getCCStyleDefaults();
+	Video.TextTrackEditor.currentConfig().reset();
 	cwc_open();
-	updateCueWindowStyle(curCCTrack);
+	updateCueWindowStyle(Video.TextTrackEditor.ttId);
 }
 function cwc_apply(){
-	ccStatus[curCCTrack]['ts'] = parseInt($(".timing-shift").val());
-	updateCueWindowStyle(curCCTrack);
-
-	var track_ = ccTracks[curCCTrack]['texttrack'];
-	var i = 0;
-	var cuesB = [];
-
-	while(track_.cues.length > 0){
-		var cue = track_.cues[0];
-		var oStart;
-		var oEnd;
-		if(cue.oStartTime){
-			oStart = cue.oStartTime;
-			oEnd = cue.oEndTime;
-		} else {
-			oStart = cue.oStartTime = cue.startTime;
-			oEnd = cue.oEndTime = cue.endTime;
-		}
-		
-		track_.removeCue(cue);
-		cue.startTime = oStart + ccStatus[curCCTrack]['ts'];
-		cue.endTime = oEnd + ccStatus[curCCTrack]['ts'];
-		cuesB.push(cue);
-		i++;
-	}
-	for(i = 0; i < cuesB.length; i++){
-		track_.addCue(cuesB[i]);
-	}
-	saveCCStatus();
+	var tt = Video.textTracks[Video.TextTrackEditor.ttId];
+	tt.config.timingShift = parseInt($(".timing-shift").val());
+	tt.applyTimingShift();
+	updateCueWindowStyle(Video.TextTrackEditor.ttId);
 }
 function cwc_ok(){
 	cwc_close();
 	cwc_apply();
+	saveCCStatus();
 }
 function cwc_close(){
 	$(".highlighted").removeClass("highlighted");
@@ -471,12 +502,30 @@ function cwc_close(){
 
 /* -- Save/Load CC status -- */
 function saveCCStatus(){
-	setCookie("ccstatus", JSON.stringify(ccStatus), 365);
+	var ttc = {};
+	for(var i in Video.textTracks){
+		if(Video.textTracks.hasOwnProperty(i)){
+			ttc[i] = Video.textTracks[i].config;
+		}
+	}
+	var cookie = JSON.stringify(ttc);
+	//console.log(cookie);
+	setCookie("ttc", cookie, 365);
 }
+
 function loadCCStatus(){
-	var ccStatus_ = getCookie("ccstatus");
-	if(ccStatus_){
-		ccStatus = JSON.parse(ccStatus_);
+	var cookie = getCookie("ttc");
+	if(!cookie) return;
+
+	var configMaster = JSON.parse(cookie);
+	if(configMaster){
+		for(var i in configMaster){
+			var tt = Video.textTracks[i];
+			var ttc = configMaster[i];
+			if(tt && ttc){
+				tt.config.fromJSON(ttc);
+			}
+		}	
 	}
 }
 
