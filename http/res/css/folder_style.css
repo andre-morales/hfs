@@ -1,6 +1,19 @@
+#folder-path {
+	border: groove 2px #AAA;
+	padding: 2px;
+}
+#folder-path a {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #FFF;
+	color: #333; 
+}
+#folder-path a:hover {
+	border-color: #CCC;
+	color: #0AF;
+}
 #files {
 	height: auto;
-
 }
 #files table {
 	width: 100%;

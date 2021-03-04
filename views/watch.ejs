@@ -9,32 +9,7 @@
 	<script src="/res/js/jquery-1.12.4.min.js"></script>
 	<script type="text/javascript">
 		function loadMainSubtitles(){
-			<%
-				var path = Path.join(System.config.GLOBAL.folder, videoPath.split('/').slice(2).join('/'), videoName + '.itt');
-				if(FS.existsSync(path)){
-					var lines = FS.readFileSync(path, 'utf8').split("\n");
-					for(var i = 0; i < lines.length; i++){
-						var itt = lines[i];
-						if(itt.trim()){
-							var split = itt.split(",");
-							var id_ = split[0].trim();
-							var lang_ = split[1].trim();
-							var label_ = split[2].trim();
-							var path_ = split[3].trim();
-							var fpath;
-							if(path_.startsWith('/')){
-								fpath = Path.join('/files', path_).replace(/\\/g, '/');
-							} else {
-								fpath = Path.join(videoPath, path_).replace(/\\/g, '/');
-							}
-							console.log("P: " + path_);
-							console.log("F: " + fpath);
-							var str = "loadTextTrack(" + id_ + ", '" + fpath + "', '" + lang_ + "', '" + label_+ "');";
-							%><%-str%><%
-						}
-					}
-				}
-			%>
+			<% genSubtitleLoadCalls(); %>
 		}
 	</script>
 	<script src="/res/js/watch_script.js"></script>
@@ -236,11 +211,38 @@
 </body>
 </html>
 <%
-function main(){
-	var si = _GET['p'].lastIndexOf("/");
-	var di = _GET['p'].lastIndexOf(".");
-	videoPath = _GET['p'].substring(0, si + 1);
-	videoName = _GET['p'].substring(si + 1, di);
-	videoExt = _GET['p'].substring(di + 1);
-}
+	function main(){
+		var si = _GET['p'].lastIndexOf("/");
+		var di = _GET['p'].lastIndexOf(".");
+		videoPath = _GET['p'].substring(0, si + 1);
+		videoName = _GET['p'].substring(si + 1, di);
+		videoExt = _GET['p'].substring(di + 1);
+	}
+
+	function genSubtitleLoadCalls(){
+		var ittFilePath = Path.join(S.path_resolveVirtual(videoPath), videoName + '.itt');
+		if(FS.existsSync(ittFilePath)){
+			var lines = FS.readFileSync(ittFilePath, 'utf8').split("\n");
+			for(var i = 0; i < lines.length; i++){
+				var itt = lines[i];
+				if(itt.trim()){
+					var split = itt.split(",");
+					var id_ = split[0].trim();
+					var lang_ = split[1].trim();
+					var label_ = split[2].trim();
+					var path_ = split[3].trim();
+					var fpath;
+					if(path_.startsWith('/')){
+						fpath = path_;
+					} else {
+						fpath = videoPath + path_;
+					}
+					fpath = S.path_normalize(fpath);
+					echo("loadTextTrack(" + id_ + ", '" + fpath + "', '" + lang_ + "', '" + label_+ "');");
+				}
+			}
+		}
+	}
+
+	function echo(s){ %><%-s%><% }
 %>

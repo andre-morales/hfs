@@ -1,6 +1,6 @@
 {
   "name": "hfs__",
-  "version": "0.97.1",
+  "version": "1.0.0",
   "description": "HTTP File Server.",
   "main": "main.js",
   "scripts": {

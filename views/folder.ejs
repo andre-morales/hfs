@@ -10,7 +10,15 @@
 	<script src="/res/js/folder_script.js"></script>
 </head>
 <body onload="main();">
-	<h1><%- folder %></h1>
+	<h1 id="folder-path">
+		<%
+			var sp = folder.split('/');
+			for(var i = 0; i < sp.length - 1; i++){
+				echo("<a href='" + sp.slice(0, i + 1).join("/") + "/'>" + sp[i] + "/</a>");
+			}
+		%>
+	</h1>
+	<p id="warning-message">You either disabled javascript or your browser is too old to support it properly. Some functionality on this page will only work on IE5+ with JS enabled.</p>
 	<form enctype="multipart/form-data" method="post">
 		<input type="file" name="file"/>
 		<input type="submit" name="fileSubmitForm" value="Upload"/>
@@ -83,4 +91,5 @@ function genFileTableEntry(name, path, icon, rowColor){
 	<%
 }
 
+function echo(s){ %><%-s%><% }
 %>

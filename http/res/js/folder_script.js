@@ -1,18 +1,12 @@
 var contextMenuW = null;
-var oldWarned = false;
-
-function oldWarn(){
-	if(!isIE5()){
-		if(!oldWarned) alert("No support for browsers older than IE5.");
-		oldWarned = true;
-		return true;
-	}
-	return false;
-}
 
 function main(){
 	polyfill_util();
-	if(oldWarn()) return;
+	if(!isIE5()) return;
+
+	var wm = document.getElementById("warning-message");
+	wm.parentNode.removeChild(wm);
+
 	contextMenu = document.getElementById("context-menu");
 	contextMenu_watch = document.getElementById("cm-watch");
 	addListener(document, 'click', function(t, event, target){
@@ -25,7 +19,7 @@ function main(){
 }
 
 function openContextMenu(ctx){
-	if(oldWarn()) return;
+	if(!isIE5()) return;
 
 	contextMenuW = ctx.parentElement;
 	contextMenuW.appendChild(contextMenu);

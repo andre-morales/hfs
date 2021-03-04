@@ -1,5 +1,5 @@
 "use strict"
-const VERSION_STR = "Alpha 0.98.1";
+const VERSION_STR = "Alpha 1.0.0";
 
 // Imports
 const Path = require('path');
@@ -59,10 +59,16 @@ function parseConfigFile(path){
 		if(line.trim()){
 			if(line.startsWith("[")){
 				group = line.substring(1, line.length - 1);
-				config[group] = {};
+				if(!config[group]){
+					config[group] = {};
+				}
 			} else {
 				var line_ = line.split(" = ");
-				config[group][line_[0]] = line_[1];
+				var key = line_[0];
+				if(config[group][key]){
+					delete config[group][key];
+				}
+				config[group][key] = line_[1];
 			}
 		}
 	}
@@ -71,52 +77,51 @@ function parseConfigFile(path){
 function setupHandlers(){
 	app.use((req, res, next) => {
 		var reqURL = decodeURI(req.url);
-		var filesSplit = reqURL.split('/');
-		var reqInsideFile = filesSplit.slice(2).join('/');
-		if(filesSplit[1] == 'v'){
-			const viewr = filesSplit.slice(2).join();
-			const viewsp = viewr.split('?');
-			var qm = viewsp.slice(1).join();
-			var km = qm.split('&');
+		var pathSplit = reqURL.split('/');
+		if(pathSplit[1] == 'v'){
+			const viewstr = pathSplit.slice(2).join();
+			const viewPath = viewstr.substring(0, viewstr.indexOf('?'));
+			var GETValueMap = parseGETMap(viewstr);
 
-			var GETValueMap = [];
-			for(var i = 0; i < km.length; i++){
-				var kmv = km[i];
-				var ioe = kmv.indexOf('=');
-				var key = kmv.substring(0, ioe);
-				var val = kmv.substring(ioe + 1);
-				GETValueMap[key] = decodeURIComponent(val);
-			}
-			res.render(viewsp[0], {
+			res.render(viewPath, {
 				'_GET' : GETValueMap,
 				FS: FS,
 				Path: Path,
-				'System': {
-					config: config,
+				'S': {
+					path_resolveVirtual: path_resolveVirtual,
+					path_normalize: path_normalize,
 				}
 			});
-		} else if(filesSplit[1] == 'files'){	
-			var reqFilePath = Path.join(config.GLOBAL.folder, reqInsideFile);
+		} else {
+			next();
+		}
+	});
 
+	for(const [mountPoint, mountLocation] of Object.entries(config.folders)){
+		app.use(mountPoint, (req, res, next) => {
+			var virtualFile = decodeURI(req.url);
+			var virtualRootURL = path_normalize(Path.join(mountPoint, virtualFile));
+			path_resolveVirtual(virtualRootURL);
+			var relativePath = Path.join(mountLocation, virtualFile);
+
+			console.log(req.method + " [: " + req.connection.remoteAddress + "] " + virtualFile);
 			if(req.method == 'GET'){
-				console.log("GET [" + req.connection.remoteAddress + "] " + reqInsideFile);	
-				if (FS.existsSync(reqFilePath)) {
-					var type = FS.lstatSync(reqFilePath);
+				if (FS.existsSync(relativePath)) {
+					var type = FS.lstatSync(relativePath);
 					if(type.isDirectory()){
 						res.render('folder', {
-							'folder': reqURL,
-							'files': getFileMap(reqFilePath)
+							'folder': virtualRootURL,
+							'files': getFileMap(relativePath)
 						});
 						return;
 					}
 				}
 				next();			
 			} else if(req.method == 'POST'){
-				console.log("POST [: " + req.connection.remoteAddress + "] " + reqInsideFile);
 				if(req.body.fileSubmitForm){
 					if(req.files){
 						var file = req.files.file;
-						file.mv(Path.join(reqFilePath, file.name));
+						file.mv(Path.join(relativePath, file.name));
 					} else {
 						console.log("Request files = null. " + req.files);
 					}
@@ -124,44 +129,65 @@ function setupHandlers(){
 					console.log("Unknown form submit. " + req.files);
 				}
 				res.render('folder', {
-					'folder': reqURL,
-					'files': getFileMap(reqFilePath)
+					'folder': virtualRootURL,
+					'files': getFileMap(relativePath)
 				});
 			}
-		} else {
-			if(req.method == 'GET'){
-				var reqFilePath = Path.join(__dirname, 'http', reqURL);
-				console.log("GET [" + req.connection.remoteAddress + "] " + reqFilePath);	
-				if (FS.existsSync(reqFilePath)) {
-					var type = FS.lstatSync(reqFilePath);
-					if(type.isDirectory()){
-						res.render('folder', {
-							'folder': reqURL,
-							'files': getFileMap(reqFilePath)
-						});
-						return;
-					}
-				}		
-			}
-			next();		
-		}
-	});
+		});
+	}
 
 	// Static resource handler
-	app.use('/files', Express.static(config.GLOBAL.folder));
+	for(var i in config.folders){
+		var mountLocation = config.folders[i];
+		console.log("[" + i + "] = " + mountLocation);
+		app.use(i, Express.static(mountLocation));
+	}
 	app.use(Express.static('http'));
 
 	// 404 handler.
-	app.use((req, res, next) => {
-		notfoundHandler(req, res);
+	app.use((req, res) => {
+		var reqFile = decodeURI(req.url);
+		console.log("request to file " + reqFile + " resulted in 404.");
+		res.status(404);
+		res.render('404.ejs', {'requestedPage': reqFile});
 	});
 }
 
-function notfoundHandler(req, res){
-	var reqFile = decodeURI(req.url);
-	console.log("request to file " + reqFile + " resulted in 404.");
-	res.status(404);
-	res.render('404.ejs', {'requestedPage': reqFile});
+function path_resolveVirtual(path){
+	path = path.replace(/\\/g, '/');
+	for(const [mountPoint, mountLocation] of Object.entries(config.folders)){
+		if(path.startsWith(mountPoint)){
+			var relativePath = path_normalize(Path.join(mountLocation, path.substring(mountPoint.length)));
+			return relativePath;
+		}
+	}
+	console.log("Couldn't resolve virtual path: " + path);
+	return null;
+}
+
+function path_normalize(path){
+	return Path.normalize(path).replace(/\\/g, '/');
+}
+
+function parseGETMap(string){
+	var GETValueMap = [];
+	var i = string.lastIndexOf('?');
+	var qm;
+	if(i == -1){
+		qm = string;
+	} else {
+		qm = string.substring(i + 1);
+	}
+	
+	var km = qm.split('&');
+	for(var i = 0; i < km.length; i++){
+		var kmv = km[i];
+		var ioe = kmv.indexOf('=');
+		var key = kmv.substring(0, ioe);
+		var val = kmv.substring(ioe + 1);
+		GETValueMap[key] = decodeURIComponent(val);
+	}
+	return GETValueMap;
 }
 
 function getFileMap(folder){
@@ -170,10 +196,14 @@ function getFileMap(folder){
 	for(var i = 0; i < files.length; i++){
 		var file = files[i];
 		var filePath = Path.join(folder, file);
-		var type = FS.lstatSync(filePath);
-		if(type.isDirectory()){
-			fileMap.push(file + "/");
-		} else {
+		try{
+			var type = FS.lstatSync(filePath);
+			if(type.isDirectory()){
+				fileMap.push(file + "/");
+			} else {
+				fileMap.push(file);
+			}
+		} catch (ev){
 			fileMap.push(file);
 		}
 	}
