@@ -3,9 +3,10 @@
 	text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
 	background: none;
 	font-family: 'Arial', sans-serif;
-	font-size: 2.2rem;
+	font-size: 2.0rem;
 }
 .tt-window-container {
+	display: table;
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -13,9 +14,9 @@
 	right: 0;
 	width: 100%;
 	height: 100%;
-	overflow: hidden;
 }
 .tt-window {
+	display: block;
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -42,7 +43,9 @@
 	font-family: 'Arial', sans-serif;
 	font-size: inherit;
 }
-
+.tt-window.highlighted .cue {
+	border: solid 2px rgba(20, 255, 20, 0.65);	
+}
 .video-container {
 	position: relative;
 	display: block;	
@@ -72,6 +75,7 @@
 	position: relative;
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
 }
 .controls-overlay > table {
 	position: absolute;
@@ -80,10 +84,13 @@
 	height: 100%;
 }
 .controls-row { 
-	transition: opacity 50ms ease-out 0s;
+	transition-property: opacity;
+	transition-delay: 0s;
+	transition-duration: 90ms;	
 }
 .controls-row.opacity-0 {
-	transition: opacity 200ms linear 1.5s;
+	transition-delay: 1.5s;
+	transition-duration: 200ms;	
 }
 .controls-overlay .controls-row {
 	pointer-events: all;
@@ -97,9 +104,22 @@
 	 1px  1px 1px rgba(0, 0, 0, 0.5), 
 	-1px  1px 1px rgba(0, 0, 0, 0.5);
 }
-.controls-overlay .progressbar {
+.controls-overlay .progress .slider {
 	display: block;
 	width: 100%;
+	margin: 0.5rem 0;
+}
+.controls-overlay .progress .hover {
+	display: none;
+	position: absolute;
+	bottom: 24px;
+	padding: 0.5rem 1rem;
+	border-radius: 4px;
+	color: white;
+	background-color: #404040; 
+}
+.controls-overlay .progress .hover.show {
+	display: inline;
 }
 .bottom-controls {	
 	width: 100%;
@@ -151,8 +171,14 @@
 
 .video-container .volumeslider {
 	display: block;
+	width: 0;
+	min-width: 0;
+	transition: width 200ms;
 }
-
+.video-container .volumeslider.expanded {
+	color: red;
+	width: 10rem;
+}
 .video-container .tt-contextmenu {
 	display: block;
 	position: relative;
@@ -205,10 +231,10 @@
 .tt-main-menu ul {
 	list-style-type: none;
 }
-.tt-main-menu div.contextmenu-item {
-	display: block;
+.tt-main-menu div.contextmenu-item .checkbox {
 	padding: 0.25rem 1rem 0.25rem 1rem;
 }
+
 .tt-main-menu .checkbox {
 	display: block;
 	width: 100%;
@@ -238,25 +264,28 @@
 	width: auto;
 }
 .cue-window-config {
-	position: absolute;
-	display: flex;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.cue-window-config .Slider {
+	width: 200px;
+	z-index: 1;
 }
 
 .cue-window-config > table {
 	margin: auto;
+	border: solid 1px rgba(20, 20, 20, 0.8);
 	background: rgba(40, 40, 40, 0.8);
-	border-radius: 4px;
 	color: white;
 	font-family: 'Arial', sans-serif;
 	font-size: 12pt;
 
 }
-.cue-window-config > table > tbody > tr:first-of-type {
-	background: rgba(30, 30, 30, 0.8);
+.cue-window-config > table > thead > tr > td {
+	border-bottom: solid 2px rgba(20, 20, 20, 0.8);
+	padding: 0.2rem;
+	background: rgba(0, 30, 80, 0.5);
 }
 .cue-window-config > table > tbody > tr > td {
 	padding: 0.2rem;
@@ -272,18 +301,21 @@
 	height: 2rem;
 }
 .cue-window-config button {
-	padding: 2px;
+	padding: 3px;
 	border: solid 1px rgb(60, 60, 60);
 	background: rgba(50, 50, 50, 0.8);
 }
 .cue-window-config button:hover {
-	background: rgba(60, 60, 60, 0.9);
+	background: rgba(70, 70, 70, 0.9);
 }
 .cue-window-config button:active {
 	border: solid 1px rgb(30, 30, 30);
 	background: rgba(40, 40, 40, 0.9);
 }
 .contextmenu-content { display: none; }
+input[type=range] {
+	min-width: 4px;
+}
 .checkbox { white-space: nowrap; }
 .show { display: block; }
 .hide { display: none; }

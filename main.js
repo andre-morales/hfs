@@ -1,5 +1,5 @@
-"use strict"
-const VERSION_STR = "Alpha 1.0.0";
+"use strict";
+const VERSION_STR = "Alpha 1.1.2";
 
 // Imports
 const Path = require('path');
@@ -83,15 +83,11 @@ function setupHandlers(){
 			const viewPath = viewstr.substring(0, viewstr.indexOf('?'));
 			var GETValueMap = parseGETMap(viewstr);
 
-			res.render(viewPath, {
+			var _vars = {
 				'_GET' : GETValueMap,
-				FS: FS,
-				Path: Path,
-				'S': {
-					path_resolveVirtual: path_resolveVirtual,
-					path_normalize: path_normalize,
-				}
-			});
+			};
+			exportStandardViewVars(_vars);
+			res.render(viewPath, _vars);
 		} else {
 			next();
 		}
@@ -109,10 +105,12 @@ function setupHandlers(){
 				if (FS.existsSync(relativePath)) {
 					var type = FS.lstatSync(relativePath);
 					if(type.isDirectory()){
-						res.render('folder', {
+						var _vars = {
 							'folder': virtualRootURL,
 							'files': getFileMap(relativePath)
-						});
+						};
+						exportStandardViewVars(_vars);
+						res.render('folder', _vars);
 						return;
 					}
 				}
@@ -149,8 +147,22 @@ function setupHandlers(){
 		var reqFile = decodeURI(req.url);
 		console.log("request to file " + reqFile + " resulted in 404.");
 		res.status(404);
-		res.render('404.ejs', {'requestedPage': reqFile});
+		var vars = {
+			'requestedPage': reqFile
+		};
+		exportStandardViewVars(vars);
+		res.render('404.ejs', vars);
 	});
+}
+
+function exportStandardViewVars(v){
+	v.FS = FS;
+	v.Path = Path;
+	v.VERSION = VERSION_STR;
+	v.S = {
+		path_resolveVirtual: path_resolveVirtual,
+		path_normalize: path_normalize,
+	};
 }
 
 function path_resolveVirtual(path){

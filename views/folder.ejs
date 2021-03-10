@@ -4,12 +4,14 @@
 	<%- include('head.ejs'); %>
 	<title>HFS - André</title>
 	<link rel="stylesheet" href="/res/css/folder_style.css" type="text/css">
+	<script src="/res/js/jquery-1.12.4.min.js"></script>
 	<script>
 		var folder = '<%- folder %>';
 	</script>
-	<script src="/res/js/folder_script.js"></script>
+	<script src="/res/js/folder_script.js"></script> 
 </head>
 <body onload="main();">
+	<span class="Slider"></span>
 	<h1 id="folder-path">
 		<%
 			var sp = folder.split('/');

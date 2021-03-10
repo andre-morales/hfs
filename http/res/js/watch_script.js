@@ -4,11 +4,18 @@ var Video = {
 	$video: null,
 	$bottomControls: null,
 	$controlRows: null,
+	$progress: null,
 	$progressbar: null,
+	$progresshover: null,
+	$muteButton: null,
 	$volumeslider: null,	
+	video: null,
 	pinnedControls: false,
 	showingControls: true,
-	
+	muteButtonHovered: false,
+	volumeSliderHovered: false,
+
+	firstPlay: false,
 
 	TextTracks: {
 		enabled: false,
@@ -26,7 +33,7 @@ var Video = {
 			}
 		},
 		setNativeTTDisplay: function(bool){
-			Video.nativeTTDisplay = bool;
+			this.nativeTTDisplay = bool;
 			for(var id in Video.textTracks){
 				var t = Video.textTracks[id];
 				t._updateMode();
@@ -39,23 +46,19 @@ var Video = {
 	},
 	textTracks: {},
 
-	TextTrackEditor: {
-		ttId: 0,
-
-		currentConfig: function(){
-			return Video.textTracks[this.ttId].config;
-		},
-	},
+	TextTrackEditor: null,
 
 	toggleFullscreen: function(){
 		if (video_isFullScreen()) {
 			if (document.exitFullscreen) document.exitFullscreen();
 			else if (document.webkitCancelFullScreen) document.webkitCancelFullScreen();
+			else if (document.msExitFullscreen) document.msExitFullscreen();
 			this.$container.removeClass("fullscreen");
 		} else {
 			var vc = this.$container[0];
 			if (vc.requestFullscreen) vc.requestFullscreen();
-      		else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen();
+			else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen();
+			else if (vc.msRequestFullscreen) vc.msRequestFullscreen();
 			this.$container.addClass("fullscreen");
 		}
 	},
@@ -64,9 +67,11 @@ var Video = {
 
 		var progress_ = this.$progressbar[0];
 		var video_ = this.$video[0];
-		if(firstPlay){
-			video_.currentTime = progress_.value * video_.duration / 100.0;
-			firstPlay = false;
+		if(!this.firstPlay){
+			if(video_.duration){
+				video_.currentTime = progress_.value * video_.duration / 100.0;
+				this.firstPlay = true;
+			}
 		}
 		if(video_.ended || video_.paused){
 			video_.play();
@@ -75,8 +80,7 @@ var Video = {
 		}
 	},
 	toggleMute: function(){
-		var video_ = this.$video[0];
-		if(video_.muted = !video_.muted){
+		if(this.video.muted = !this.video.muted){
 			this.$container.addClass("muted");
 		} else {
 			this.$container.removeClass("muted");
@@ -100,13 +104,20 @@ var Video = {
 	},
 
 	init: function(){
+		var self = this;
 		this.$video = this.$container.find('video');
+		this.video = this.$video[0];
 		this.$controlRows = this.$container.find(".controls-row");
 		this.$bottomControls = this.$container.find('.bottom-controls');
-		this.$progressbar = this.$controlRows.find('.progressbar');
+		this.$muteButton = this.$container.find('.mutebutton');
+		this.$progress = this.$container.find('.progress');
+		this.$progressbar = this.$progress.find('.slider');
+		this.$progresshover = this.$progress.find('.hover');
 		this.$volumeslider = this.$bottomControls.find('.volumeslider');
+		this.$time = this.$bottomControls.find('.time');
 		this.TextTracks.init();
-
+		this.TextTrackEditor = new Text_TrackEditor();
+		this.TextTrackEditor.init();
 		this.$controlRows.hover(function(){
 			if(!Video.pinnedControls && Video.showingControls){
 				Video.showingControls = false;
@@ -118,183 +129,73 @@ var Video = {
 				Video.$controlRows.addClass("opacity-0");
 			}
 		});
+		this.$muteButton.parent().hover(function(){
+			self.muteButtonHovered = true;
+			self.$volumeslider.addClass('expanded');
+		}, function(){
+			self.muteButtonHovered = false;
+			if(!self.volumeSliderHovered && !self.muteButtonHovered){
+				self.$volumeslider.removeClass('expanded');
+			}
+		});
+		this.$volumeslider.parent().hover(function(){
+			self.volumeSliderHovered = true;
+			self.$volumeslider.addClass('expanded');
+		}, function(){
+			self.volumeSliderHovered = false;
+			if(!self.volumeSliderHovered && !self.muteButtonHovered){
+				self.$volumeslider.removeClass('expanded');
+			}
+		});
+		this.$video.bind('timeupdate', function() {
+			var video_ = self.$video[0];
+			if(!sliderHeld){
+				var progress_ = self.$progressbar[0];
+				if(video_.duration > 0){
+					progress_.setValue(video_.currentTime / video_.duration);
+				} else {
+					progress_.setValue(0);
+				}
+			}
+
+			var timestr = toTimeString(video_.currentTime) + " / " + toTimeString(video_.duration);
+			self.$time.text(timestr);
+			for(var id in self.textTracks){
+				var tt = self.textTracks[id];
+				if(tt.config.enabled){
+					tt.updateCues();
+				}
+			}
+		});
 	}
 };
 
-function TextTrack(id, src, lang, label){
-	var self = this;
-	this.id = id;
-	this.lang = lang;
-	this.label = label;
+function toTimeString(time){
+	var floor = Math.floor;
 
-	// Creates track tag under video tag.
-	this.$track = templateOf("t_track");
-	this.$track.load(function(){
-		self.applyTimingShift();
-	});
-	this.$track.attr("src", src);
-	this.$track.attr("srclang", lang);
-	this.$track.attr("label", label);
-	this.$track.attr("data-track-id", id);
-	Video.$video.append(this.$track);
-	this.texttrack = this.$track[0].track;
+	var cTimeM = floor(time / 60);
+	var cTimeS = floor(time - cTimeM * 60);
 
-	// Create cues window.
-	this.$window = templateOf("t_tt-window");
-	this.$insideWindow = this.$window.find(".tt-window-internal");
-	Video.TextTracks.$ttWindowContainer.append(this.$window);
-
-	this.$ttListItem = templateOf("t_tt-list-item");
-	this.$enableCheckbox = this.$ttListItem.find(".cc-enable-checkbox");
-	Video.TextTracks.$ttList.append(this.$ttListItem);
-
-	this.$enableCheckbox.bind('click', function(){		
-		self.setEnabled(this.checked);
-		saveCCStatus();
-	});
-	this.setEnabled = function(bool){
-		this.config.enabled = bool;
-		this._updateMode();
-	};
-	this._updateMode = function(){
-		if(this.config.enabled && Video.TextTracks.enabled){
-			if(Video.nativeTTDisplay){
-				this.texttrack.mode = 'showing';
-				this.$window.addClass("hide");
-			} else {
-				this.texttrack.mode = 'hidden';
-				this.$window.removeClass("hide");
-			}
-		} else {
-			this.texttrack.mode = 'disabled';
-			this.$window.addClass("hide");
-		}	
-	};
-	this.applyTimingShift = function(){
-		if(this.currentTimingShift == this.config.timingShift) return;
-		if(!this.texttrack.cues) return;
-		if(this.texttrack.cues.length == 0) return;
-		this.currentTimingShift = this.config.timingShift;
-		var i = 0;
-		var cuesB = [];
-		while(this.texttrack.cues.length > 0){
-			var cue = this.texttrack.cues[0];
-			var oStart;
-			var oEnd;
-			if(!cue.oStartTime){
-				cue.oStartTime = cue.startTime;
-				cue.oEndTime = cue.endTime;
-			}
-			oStart = cue.oStartTime;
-			oEnd = cue.oEndTime;
-
-			this.texttrack.removeCue(cue);
-			cue.startTime = oStart + this.config.timingShift;
-			cue.endTime = oEnd + this.config.timingShift;
-			cuesB.push(cue);
-			i++;
-		}
-		for(i = 0; i < cuesB.length; i++){
-			this.texttrack.addCue(cuesB[i]);
-		}
-
-	};
-	this.updateCues = function(){
-		var cueWindow = this.$insideWindow;
-		var textTrack = this.texttrack;
-		cueWindow.empty();
-
-		var ac = textTrack.activeCues.length;
-		for(var i = 0; i < ac; i++){
-			var cue = textTrack.activeCues[i];
-			var liney = cue.line;
-			var str = cue.text;
-			var cuetag = $('<span class="cue"></span>').html(str.replace('\n', '<br/>'));
-			
-			cueWindow.append(cuetag);
-			if(this.config.lineYFlip){
-				liney = 100 - liney;
-			}
-				
-			if(liney > 50){
-				cuetag.css("top",    liney         + "%");
-				cuetag.css("bottom", 0             + "%");
-			} else {
-				cuetag.css("bottom", (100 - liney) + "%");
-				cuetag.css("top",    0             + "%");
-			}
-		}	
-	};
-	this.currentTimingShift = 0;
-	this.config = new TextTrackConfig();
-	this.config.id = id;
-
-	this.texttrack.addEventListener('cuechange', function(){
-		if(!self.config.enabled) return;
-
-		/*if(self.currentTimingShift != self.config.timingShift){
-			self.applyTimingShift();
-		}*/
-		self.updateCues();
-	});
+	var cTimeS_ = (cTimeS < 10)?("0" + cTimeS):cTimeS;
+	var cTimeM_ = cTimeM;
+	return cTimeM_ + ":" + cTimeS_;
 }
 
-function TextTrackConfig(){
-	var self = this;
-	this.reset = function(){
-		self.enabled = false;
-		self.window_x = 0;
-		self.window_y = 50;
-		self.window_w = 100;
-		self.window_h = 100;
-		self.fontSize = 20;
-		self.timingShift = 0.0;
-		self.lineYFlip = false;
-	};
-	this.toJSON = function(){
-		return {
-			en: (self.enabled)?1:0,
-			wx: self.window_x,
-			wy: self.window_y,
-			ww: self.window_w,
-			wh: self.window_h,
-			fs: self.fontSize,
-			ts: self.timingShift,
-			yf: (self.lineYFlip)?1:0,
-		};
-	};
-	this.fromJSON = function(src){
-		var tt = Video.textTracks[this.id];
-
-		self.enabled = (src.en == 1);
-		self.window_x = src.wx * 1.0;
-		self.window_y = src.wy * 1.0;
-		self.window_w = src.ww * 1.0;
-		self.window_h = src.wh * 1.0;
-		self.fontSize = src.fs * 1.0;
-		self.timingShift = src.ts * 1.0;
-		self.lineYFlip = (src.yf == 1);
-		tt.$enableCheckbox[0].checked = self.enabled;
-	};
-	this.reset();
-}
-
-var cueWindowConfig = null;
 var cueWindowConfig_ = {};
 var sliderHeld = false;
-var firstPlay = true;
 
 function main(){
+	polyfill_util();
+	/*console.log("main().");*/
+	/*console.time("Main() time");*/
 	resetCheckboxValues();
 
 	Video.$container = $('.video-container');
 	Video.init();	
 
-	cueWindowConfig = $('.cue-window-config');
 	var cwc_f = function(q){
-		cueWindowConfig_[q] = cueWindowConfig.find("." + q);
+		cueWindowConfig_[q] = Video.TextTrackEditor.$container.find("." + q);
 	}
-	cwc_f('title');
 	cwc_f("wx"); cwc_f("val-wx");
 	cwc_f("wy"); cwc_f("val-wy");
 	cwc_f("ww"); cwc_f("val-ww");
@@ -323,24 +224,46 @@ function main(){
 
 
 	// -- Progress Bar --
-	Video.$progressbar.bind('onmousedown', function(){ sliderHeld = true; });
-	Video.$progressbar.bind('onmouseup', function(){ sliderHeld = false; });
-	Video.$progressbar.bind('change', function() {
-		var video_ = Video.$video[0];
+	Video.$progress.hover(function(){
+		Video.$progresshover.addClass('show');
+	}, function(){
+		Video.$progresshover.removeClass('show');
+	});
+	Video.$progress.mousemove(function(ev){
+		var wb = Video.$progress.outerWidth();
+		var offsetX = Video.$progress.offset().left;
+		var wh = Video.$progresshover.outerWidth();
+		var ox = ev.pageX - offsetX;
+
+		var t = ox / wb;
+		if(Video.video.duration){
+			Video.$progresshover.text(toTimeString(t * Video.video.duration));
+		} else {
+			Video.$progresshover.text("00:00");
+		}
+		
+		var x = ox - wh/2;
+		if(x > wb - wh){ 
+			x = wb - wh;
+			Video.$progresshover.css("left", "auto");
+			Video.$progresshover.css("right", 0);
+		} else {
+			if(x < 0) x = 0;
+			Video.$progresshover.css("left", x);
+			Video.$progresshover.css("right", "auto");
+		}			
+	});
+	Video.$progressbar.bind('mousedown', function(){ sliderHeld = true;});
+	Video.$progressbar.bind('mouseup', function(){
+		sliderHeld = false;
+		var video_ = Video.video;
 		if(isFinite(video_.duration)){
-			video_.currentTime = Video.$progressbar.val() * video_.duration / 100.0;	
+			var rat = Video.$progressbar[0].value;
+			video_.currentTime = rat * video_.duration;	
 		}
 	});
-	Video.$video.bind('timeupdate', function() {
-		if(!sliderHeld){
-			var video_ = Video.$video[0];
-			var progress_ = Video.$progressbar[0];
-			if(video_.duration > 0){
-				progress_.value = video_.currentTime * 100.0 / video_.duration;
-			} else {
-				progress_.value = 0;
-			}
-		}
+	Video.$progressbar.bind('change', function() {
+		
 	});
 
 	// -- Volume Control --
@@ -374,6 +297,7 @@ function main(){
 		if(!Video.textTracks[i]) break;
 		updateCueWindowStyle(i);
 	}
+	/*console.timeEnd("Main() time");*/
 }
 
 
@@ -404,88 +328,41 @@ function video_isFullScreen() {
 	return !!(document.fullscreen || document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement || document.fullscreenElement);
 }
 
-function loadTextTrack(id, src, lang, label){
-	Video.textTracks[id] = new TextTrack(id, src, lang, label);
-
-	var ttt = Video.textTracks[id];
-	var ttc = ttt.config;
-
-	// Creates subitem on the captions menu on the bottom controls.
-	
-	ttt.$ttListItem.find(".cc-label").text(label);
-	var morebtn = ttt.$ttListItem.find(".morebutton");
-	morebtn.click(function(){
-		Video.TextTrackEditor.ttId = id;
-		cueWindowConfig_['title'].text(label);
-		cwc_open();
-		updateCueWindowStyle(id);
-		$(".highlighted").removeClass("highlighted");
-		ttt.$window.addClass('highlighted');
-		cueWindowConfig.removeClass('hide');
-	});
-}
-
 /* -- Cue window configurator -- */
 function cwc_setup(){
 	var gcttc = function(){
 		return Video.textTracks[Video.TextTrackEditor.ttId].config;
 	};
 	addSliderChangeListener(cueWindowConfig_['wx'], function(t, e){
-		gcttc().window_x = t.val();
-		cueWindowConfig_["val-wx"].text(t.val());
+		gcttc().window_x = t[0].value;
+		cueWindowConfig_["val-wx"].text(t[0].value.toFixed(0));
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wy'], function(t, e){
-		gcttc().window_y = t.val();
-		cueWindowConfig_["val-wy"].text(t.val());
+		gcttc().window_y = t[0].value;
+		cueWindowConfig_["val-wy"].text(t[0].value.toFixed(0));
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['ww'], function(t, e){
-		gcttc().window_w = t.val();
-		cueWindowConfig_["val-ww"].text(t.val());
+		gcttc().window_w = t[0].value;
+		cueWindowConfig_["val-ww"].text(t[0].value.toFixed(0));
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wh'], function(t, e){
-		gcttc().window_h = t.val();
-		cueWindowConfig_["val-wh"].text(t.val());
+		gcttc().window_h = t[0].value;
+		cueWindowConfig_["val-wh"].text(t[0].value.toFixed(0));
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['font-size'], function(t, e){
-		gcttc().fontSize = t.val();
-		cueWindowConfig_["val-font-size"].text(t.val());
+		gcttc().fontSize = t[0].value;
+		cueWindowConfig_["val-font-size"].text(t[0].value.toFixed(0));
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
-}
-
-function cwc_open(){
-	var ttc = Video.textTracks[Video.TextTrackEditor.ttId].config;
-	var wx = ttc.window_x;
-	var wy = ttc.window_y;
-	var ww = ttc.window_w;
-	var wh = ttc.window_h;
-	var fs = ttc.fontSize;
-	cueWindowConfig_["wx"].val(wx);
-	cueWindowConfig_["val-wx"].text(wx);
-
-	cueWindowConfig_["wy"].val(wy);
-	cueWindowConfig_["val-wy"].text(wy);
-
-	cueWindowConfig_["ww"].val(ww);
-	cueWindowConfig_["val-ww"].text(ww);
-
-	cueWindowConfig_["wh"].val(wh);
-	cueWindowConfig_["val-wh"].text(wh);
-
-	cueWindowConfig_["font-size"].val(fs);
-	cueWindowConfig_["val-font-size"].text(fs);
-
-	cueWindowConfig_["flip-y-line"][0].checked = ttc.lineYFlip;
-	cueWindowConfig_["timing-shift"].val(ttc.timingShift);
 }
 
 function cwc_toggleYLineFlip(ctx){
@@ -496,23 +373,8 @@ function cwc_toggleYLineFlip(ctx){
 
 function cwc_reset(){
 	Video.TextTrackEditor.currentConfig().reset();
-	cwc_open();
+	Video.TextTrackEditor.openFor(Video.TextTrackEditor.ttId);
 	updateCueWindowStyle(Video.TextTrackEditor.ttId);
-}
-function cwc_apply(){
-	var tt = Video.textTracks[Video.TextTrackEditor.ttId];
-	tt.config.timingShift = parseInt($(".timing-shift").val());
-	tt.applyTimingShift();
-	updateCueWindowStyle(Video.TextTrackEditor.ttId);
-}
-function cwc_ok(){
-	cwc_close();
-	cwc_apply();
-	saveCCStatus();
-}
-function cwc_close(){
-	$(".highlighted").removeClass("highlighted");
-	cueWindowConfig.addClass('hide');
 }
 
 /* -- Save/Load CC status -- */
@@ -545,8 +407,13 @@ function loadCCStatus(){
 }
 
 /* -- Template function -- */
-function templateOf(templateId){
-	return $($("#" + templateId)[0].content.firstElementChild.cloneNode(true));
+function templateOf(templateId, target){
+	var $template = $("#" + templateId);
+	var template = $template[0];
+	var clone = $(template.cloneNode(true));
+	if(target) target.append(clone);
+	clone.removeClass("template");
+	return clone;
 }
 
 /* -- Custom smooth slider listener -- */
@@ -583,4 +450,8 @@ function setCookie(name, value, exdays) {
 
 	var expires = "expires=" + d.toUTCString();
 	document.cookie = name + "=" + value + ";" + expires + ";samesite=lax;path=/";
+}
+
+function _datc(c, n){
+	return Video.textTracks[c].webvtt.activeCues[n];
 }

@@ -2,7 +2,7 @@ var contextMenuW = null;
 
 function main(){
 	polyfill_util();
-	if(!isIE5()) return;
+	if(!IE5_OR_NEWER) return;
 
 	var wm = document.getElementById("warning-message");
 	wm.parentNode.removeChild(wm);
@@ -18,8 +18,10 @@ function main(){
 	});
 }
 
+
+
 function openContextMenu(ctx){
-	if(!isIE5()) return;
+	if(!IE5_OR_NEWER) return;
 
 	contextMenuW = ctx.parentElement;
 	contextMenuW.appendChild(contextMenu);

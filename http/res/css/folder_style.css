@@ -1,5 +1,7 @@
 #folder-path {
 	border: groove 2px #AAA;
+
+	display: block;
 	padding: 2px;
 }
 #folder-path a {
