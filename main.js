@@ -1,5 +1,6 @@
 "use strict";
-const VERSION_STR = "Alpha 1.1.2";
+
+const VERSION_STR = "Alpha 1.2.0";
 
 // Imports
 const Path = require('path');
@@ -126,10 +127,13 @@ function setupHandlers(){
 				} else {
 					console.log("Unknown form submit. " + req.files);
 				}
-				res.render('folder', {
+
+				var _vars = {
 					'folder': virtualRootURL,
 					'files': getFileMap(relativePath)
-				});
+				};
+				exportStandardViewVars(_vars);
+				res.render('folder', _vars);
 			}
 		});
 	}

@@ -1,7 +1,10 @@
+#path-toolbar td {
+	border: solid 1px #CCC;
+}
 #folder-path {
-	border: groove 2px #AAA;
-
 	display: block;
+	border: groove 2px #AAA;
+	margin: 0px;
 	padding: 2px;
 }
 #folder-path a {
@@ -28,16 +31,17 @@
 
 .menu-wrapper span {
 	display: block;
+	position: relative;
 	box-sizing: border-box;
 	padding: 0px 4px 0 0;
 }
 .menu-wrapper span button {
+	display: block;
 	width: 26px;
 	height: 38px;
-	display: block;
-	color: black;
-	background: white;
 	border: solid 1px gray;
+	background: white;
+	color: black;
 }
 #context-menu {
 	display: none;
@@ -46,13 +50,14 @@
 	display: block;
 	position: absolute;
 	background: white;
+	top: 0;
+	left: 100%;
 	z-index: 1;
 }
 .menu-wrapper #context-menu a {
-	border: solid 1px gray;
-}
-.menu-wrapper #context-menu a {
 	display: block;
+	border: solid 1px gray;
+	text-align: center;
 	padding: 4px 16px;
 }
 .menu-wrapper #context-menu a:hover {
@@ -62,7 +67,9 @@
 	padding: 0;
 }
 .menu-wrapper #cm-watch {color: gray;}
-.menu-wrapper .watchable #cm-watch {color: black;}
+.watchable #cm-watch {color: black;}
+.menu-wrapper #cm-edit {color: gray;}
+.editable #cm-edit {color: black;}
 
 .FileLink {
 	width: 100%;

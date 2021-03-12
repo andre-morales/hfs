@@ -1,0 +1,12 @@
++ IE4- No functionality beyond downloading and maybe uploading trough forms. Disabled JS. Browsers from the IE4 era don't really support standard DOM functionality and polyfilling for them would be a pain.
++ IE5+ No jQuery. Menus will work and editing functionality should work acceptably.
++ IE6+ jQuery. Polyfill for fancy sliders and UI available.
++ IE9+ HTML video with custom controls.
++ IE11 HTML video with subtitles.
+
+-- IE5 --
++ element.className
++ element.parentNode
++ element.getElementById()
++ element.removeChild()
++ element.attachEvent()

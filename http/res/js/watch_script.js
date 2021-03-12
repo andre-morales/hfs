@@ -14,7 +14,7 @@ var Video = {
 	showingControls: true,
 	muteButtonHovered: false,
 	volumeSliderHovered: false,
-
+	fullscreen: false,
 	firstPlay: false,
 
 	TextTracks: {
@@ -49,17 +49,19 @@ var Video = {
 	TextTrackEditor: null,
 
 	toggleFullscreen: function(){
+		if(this.fullscreen) this.$container.removeClass("fullscreen");
+		else this.$container.addClass("fullscreen");
+		this.fullscreen = !this.fullscreen;
+		
 		if (video_isFullScreen()) {
 			if (document.exitFullscreen) document.exitFullscreen();
 			else if (document.webkitCancelFullScreen) document.webkitCancelFullScreen();
 			else if (document.msExitFullscreen) document.msExitFullscreen();
-			this.$container.removeClass("fullscreen");
 		} else {
 			var vc = this.$container[0];
 			if (vc.requestFullscreen) vc.requestFullscreen();
 			else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen();
 			else if (vc.msRequestFullscreen) vc.msRequestFullscreen();
-			this.$container.addClass("fullscreen");
 		}
 	},
 	togglePlay: function(){
@@ -69,7 +71,7 @@ var Video = {
 		var video_ = this.$video[0];
 		if(!this.firstPlay){
 			if(video_.duration){
-				video_.currentTime = progress_.value * video_.duration / 100.0;
+				video_.currentTime = progress_.value * video_.duration;
 				this.firstPlay = true;
 			}
 		}
@@ -200,26 +202,44 @@ function main(){
 	cwc_f("wy"); cwc_f("val-wy");
 	cwc_f("ww"); cwc_f("val-ww");
 	cwc_f("wh"); cwc_f("val-wh");
+	cwc_f("ys"); cwc_f("val-ys");
+	cwc_f("ysh"); cwc_f("val-ysh");
 	cwc_f("font-size"); cwc_f("val-font-size");	
-	cwc_f("flip-y-line");	
 	cwc_f("timing-shift");	
 	var cwc_ss = function(n, shift){
 		var s = cueWindowConfig_[n];
 		var sli = s[0];
 		var p = s.parent();
+
 		p.prev().find("button").click(function(){
-			sli.value -= shift;
+			sli.setValue(sli.value - shift);
 			s.trigger('change');
 		});
 		p.next().find("button").click(function(){
-			sli.value = sli.value * 1.0 + shift;
+			sli.setValue(sli.value * 1.0 + shift);
 			s.trigger('change');
 		});
 	};
 	cwc_ss('wx', 1); cwc_ss('wy', 1);
 	cwc_ss('ww', 1); cwc_ss('wh', 1);
+	cwc_ss('ys', 1); cwc_ss('ysh', 1);
 	cwc_ss('font-size', 0.5);
-	cwc_ss('timing-shift', 0.5);
+
+	var cwc_ssd = function(n, shift){
+		var s = cueWindowConfig_[n];
+		var sli = s[0];
+		var p = s.parent();
+
+		p.prev().find("button").click(function(){
+			s.val(sli.value - shift);
+			s.trigger('change');
+		});
+		p.next().find("button").click(function(){
+			s.val(sli.value * 1.0 + shift);
+			s.trigger('change');
+		});
+	};
+	cwc_ssd('timing-shift', 0.5);
 	Video.$video[0].controls = false;
 
 
@@ -254,16 +274,15 @@ function main(){
 		}			
 	});
 	Video.$progressbar.bind('mousedown', function(){ sliderHeld = true;});
-	Video.$progressbar.bind('mouseup', function(){
-		sliderHeld = false;
-		var video_ = Video.video;
-		if(isFinite(video_.duration)){
-			var rat = Video.$progressbar[0].value;
-			video_.currentTime = rat * video_.duration;	
+	$(document).mouseup(function(){
+		if(sliderHeld){
+			sliderHeld = false;
+			var video_ = Video.video;
+			if(isFinite(video_.duration)){
+				var rat = Video.$progressbar[0].value;
+				video_.currentTime = rat * video_.duration;	
+			}
 		}
-	});
-	Video.$progressbar.bind('change', function() {
-		
 	});
 
 	// -- Volume Control --
@@ -330,45 +349,56 @@ function video_isFullScreen() {
 
 /* -- Cue window configurator -- */
 function cwc_setup(){
+
 	var gcttc = function(){
 		return Video.textTracks[Video.TextTrackEditor.ttId].config;
 	};
 	addSliderChangeListener(cueWindowConfig_['wx'], function(t, e){
-		gcttc().window_x = t[0].value;
-		cueWindowConfig_["val-wx"].text(t[0].value.toFixed(0));
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().window_x = v;
+		cueWindowConfig_["val-wx"].text(v);
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wy'], function(t, e){
-		gcttc().window_y = t[0].value;
-		cueWindowConfig_["val-wy"].text(t[0].value.toFixed(0));
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().window_y = v;
+		cueWindowConfig_["val-wy"].text(v);
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['ww'], function(t, e){
-		gcttc().window_w = t[0].value;
-		cueWindowConfig_["val-ww"].text(t[0].value.toFixed(0));
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().window_w = v;
+		cueWindowConfig_["val-ww"].text(v);
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
 	addSliderChangeListener(cueWindowConfig_['wh'], function(t, e){
-		gcttc().window_h = t[0].value;
-		cueWindowConfig_["val-wh"].text(t[0].value.toFixed(0));
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().window_h = v;
+		cueWindowConfig_["val-wh"].text(v);
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
-
+	addSliderChangeListener(cueWindowConfig_['ys'], function(t, e){
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().lineYSpread = v;
+		cueWindowConfig_["val-ys"].text(v);
+		Video.textTracks[Video.TextTrackEditor.ttId].updateCues();
+	});
+	addSliderChangeListener(cueWindowConfig_['ysh'], function(t, e){
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().lineYShift = v;
+		cueWindowConfig_["val-ysh"].text(v);
+		Video.textTracks[Video.TextTrackEditor.ttId].updateCues();
+	});
 	addSliderChangeListener(cueWindowConfig_['font-size'], function(t, e){
-		gcttc().fontSize = t[0].value;
-		cueWindowConfig_["val-font-size"].text(t[0].value.toFixed(0));
+		var v = t[0].value.toFixed(0) * 1.0;
+		gcttc().fontSize = v;
+		cueWindowConfig_["val-font-size"].text(v);
 		updateCueWindowStyle(Video.TextTrackEditor.ttId);
 	});
 
-}
-
-function cwc_toggleYLineFlip(ctx){
-	var ttt = Video.textTracks[Video.TextTrackEditor.ttId];
-	ttt.config.lineYFlip = ctx.checked;
-	ttt.updateCues();
 }
 
 function cwc_reset(){

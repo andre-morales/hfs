@@ -82,7 +82,7 @@ function Text_Track(id, src, lang, label){
 	this.updateCues = function(){
 		var webvtt = this.webvtt;
 		if(!webvtt || !webvtt.cues || webvtt.cues.length === 0){
-			Console.log("Subtitles not updating.");
+			/*Console.log("Subtitles not updating.");*/
 			return;
 		}
 		
@@ -115,11 +115,10 @@ function Text_Track(id, src, lang, label){
 			var str = cue.text;
 			var cuetag = $('<span class="cue"></span>').html(str.replace('\n', '<br/>'));
 			
-			this.$insideWindow.append(cuetag);
-			if(this.config.lineYFlip){
-				liney = 100 - liney;
-			}
-				
+			this.$insideWindow.append(cuetag);				
+			var m = this.config.lineYSpread / 50;
+			liney = (liney - 50) * m + 50 + this.config.lineYShift;
+
 			if(liney <= 50){
 				cuetag.css("bottom", "auto");
 				cuetag.css("top",    liney + "%");
@@ -153,12 +152,12 @@ function eqArray(a, b){
 
 var __TT_CONFIG_PROP_MAP__ = {
 	enabled: ['en', 1],
-	lineYFlip: ['yf', 0],
-
 	window_x: ['wx', 0],
 	window_y: ['wy', 0],
 	window_w: ['ww', 100],
 	window_h: ['wh', 100],
+	lineYSpread: ['ys', 100],
+	lineYShift: ['ysh', 0],
 	fontSize: ['fs', 20],
 	timingShift: ['ts', 0],
 };
@@ -210,23 +209,30 @@ function Text_TrackEditor(){
 		var wy = ttc.window_y;
 		var ww = ttc.window_w;
 		var wh = ttc.window_h;
+		var ys = ttc.lineYSpread;
+		var ysh = ttc.lineYShift;
 		var fs = ttc.fontSize;
-		cueWindowConfig_["wx"].val(wx);
+		cueWindowConfig_["wx"][0].setValue(wx);
 		cueWindowConfig_["val-wx"].text(wx);
 
-		cueWindowConfig_["wy"].val(wy);
+		cueWindowConfig_["wy"][0].setValue(wy);
 		cueWindowConfig_["val-wy"].text(wy);
 
-		cueWindowConfig_["ww"].val(ww);
+		cueWindowConfig_["ww"][0].setValue(ww);
 		cueWindowConfig_["val-ww"].text(ww);
 
-		cueWindowConfig_["wh"].val(wh);
+		cueWindowConfig_["wh"][0].setValue(wh);
 		cueWindowConfig_["val-wh"].text(wh);
 
-		cueWindowConfig_["font-size"].val(fs);
+		cueWindowConfig_["ys"][0].setValue(ys);
+		cueWindowConfig_["val-ys"].text(ys);
+
+		cueWindowConfig_["ysh"][0].setValue(ysh);
+		cueWindowConfig_["val-ysh"].text(ysh);
+
+		cueWindowConfig_["font-size"][0].setValue(fs);
 		cueWindowConfig_["val-font-size"].text(fs);
 
-		cueWindowConfig_["flip-y-line"][0].checked = ttc.lineYFlip;
 		cueWindowConfig_["timing-shift"].val(ttc.timingShift);
 		tt.$window.addClass('highlighted');
 		this.$container.removeClass('hide');

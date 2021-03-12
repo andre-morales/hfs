@@ -1,5 +1,6 @@
-* { padding: 0; margin: 0; border: none; }
+* { padding: 0; margin: 0; }
 body {
+	border: none;
 	background-color: white;
 	margin: 8px;
 }
@@ -36,10 +37,14 @@ img {
 .Slider {
 	position: relative;
 	display: inline-block;
-	width: 20em;
-	height: 4px;
-	border: solid 1px black;
-	box-sizing: content-box;
+	width: 256px;
+	height: 8px;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #333;
+	border-color: rgba(10, 10, 10, 0.5);
+	font-size: 7px;
+	box-sizing: border-box;
 	user-select: none;
 	background: white;
 }
@@ -50,8 +55,9 @@ img {
 	height: 100%;
 	width: 50%;
 	left: 0;
+	top: 0;
 	line-height: 0;
-	box-sizing: content-box;
+	box-sizing: border-box;
 	user-select: none;
 	background: #00B6FF;
 }
@@ -60,10 +66,14 @@ img {
 	display: block;
 	top: -45%;
 	left: 49%;
-	width: 1em;
-	height: 16px;
-	/*box-shadow: 0 0 2px 1px #888;*/
-	border: solid 1px #888;
+	width: 18px;
+	height: 18px;
+	box-sizing: border-box;
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.75);
+	border-style: solid;
+	border-width: 1px;
+	border-color: #000;
+	border-color: rgba(0, 0, 0, 0);
 	border-radius: 50%;
 	user-select: none;
 	background: white;

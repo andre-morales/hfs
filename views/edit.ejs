@@ -1,0 +1,58 @@
+<% main(); %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<%- include ('head.ejs') %>
+	<title>HFS - André</title>
+	<style>
+		form {
+			height: 100%;
+		}
+		#textarea-wrapper {
+			box-sizing: border-box;
+			padding: 1px;
+			width: 100%;
+			height: 100%;
+			border: solid 1px #CCC;
+		}
+		textarea {
+			display: block;
+			box-sizing: border-box;
+			width: 100%;
+			height: 100%;
+			border: solid 1px #111;
+			white-space: pre;
+			font-size: 11pt;
+			font-family: monospace;
+			tab-size: 20px;
+			-moz-tab-size: 20px;
+			-ms-tab-size: 20px;
+		}
+	</style>
+</head>
+<body>
+	<a href="/files/">Home.</a>
+	<h1>Edit <%-fileFullName%></h1>
+	<hr>
+	<form>
+		<div id="textarea-wrapper">
+			<textarea rows="18" wrap="off"><%-FS.readFileSync(S.path_resolveVirtual(fileFullPath))%></textarea>
+		</div>
+		<input type="submit" value="Save"/>
+	</form>
+	<%- include ('footer.ejs') %>
+</body>
+</html>
+<%
+	function main(){
+		var si = _GET['p'].lastIndexOf("/");
+		var di = _GET['p'].lastIndexOf(".");
+		fileFullPath = _GET['p'];
+		filePath = _GET['p'].substring(0, si + 1);
+		fileFullName = _GET['p'].substring(si + 1);
+		fileName = _GET['p'].substring(si + 1, di);
+		fileExt = _GET['p'].substring(di + 1);
+	}
+
+	function echo(s){ %><%-s%><% }
+%>
