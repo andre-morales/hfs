@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION_STR = "Alpha 1.2.0";
+const VERSION_STR = "Alpha 1.3.0";
 
 // Imports
 const Path = require('path');
@@ -76,64 +76,54 @@ function parseConfigFile(path){
 }
 
 function setupHandlers(){
-	app.use((req, res, next) => {
-		var reqURL = decodeURI(req.url);
-		var pathSplit = reqURL.split('/');
-		if(pathSplit[1] == 'v'){
-			const viewstr = pathSplit.slice(2).join();
-			const viewPath = viewstr.substring(0, viewstr.indexOf('?'));
-			var GETValueMap = parseGETMap(viewstr);
-
-			var _vars = {
-				'_GET' : GETValueMap,
-			};
-			exportStandardViewVars(_vars);
-			res.render(viewPath, _vars);
-		} else {
-			next();
-		}
-	});
-
 	for(const [mountPoint, mountLocation] of Object.entries(config.folders)){
 		app.use(mountPoint, (req, res, next) => {
-			var virtualFile = decodeURI(req.url);
-			var virtualRootURL = path_normalize(Path.join(mountPoint, virtualFile));
-			path_resolveVirtual(virtualRootURL);
-			var relativePath = Path.join(mountLocation, virtualFile);
+			var URL = decomposeURL(path_join(mountPoint, req.url));
+			var virtualFile = URL.path;
+			var absoluteFile = path_resolveVirtual(virtualFile);
 
-			console.log(req.method + " [: " + req.connection.remoteAddress + "] " + virtualFile);
-			if(req.method == 'GET'){
-				if (FS.existsSync(relativePath)) {
-					var type = FS.lstatSync(relativePath);
+			var _GET = parseGETMap(req.url);
+			var _vars = {
+				'_GET': _GET,
+				'_FILE': virtualFile,
+			};
+			if(req.method == 'POST'){
+				_vars._POST = req.body;
+			}
+
+			exportStandardViewVars(_vars);
+			var op = _GET['v'];
+			if(op){
+				if(op == 'thumb'){
+					handleThumbRequest(absoluteFile, res);
+				} else {
+					res.render(op, _vars);
+				}
+			} else {
+				if(req.method == 'POST'){
+					if(req.body.fileSubmitForm){
+						if(req.files){
+							var file = req.files.file;
+							file.mv(Path.join(absoluteFile, file.name));
+						} else {
+							console.log("Request files = null. " + req.files);
+						}
+					} else {
+						console.log("Unknown form submit. " + req.files);
+					}
+				}
+
+				if (FS.existsSync(absoluteFile)) {
+					var type = FS.lstatSync(absoluteFile);
 					if(type.isDirectory()){
-						var _vars = {
-							'folder': virtualRootURL,
-							'files': getFileMap(relativePath)
-						};
-						exportStandardViewVars(_vars);
+						_vars.folder = virtualFile;
+						_vars.files = getFileMap(absoluteFile);
+						_vars._COOKIES = parseCookies(req);
 						res.render('folder', _vars);
 						return;
 					}
 				}
-				next();			
-			} else if(req.method == 'POST'){
-				if(req.body.fileSubmitForm){
-					if(req.files){
-						var file = req.files.file;
-						file.mv(Path.join(relativePath, file.name));
-					} else {
-						console.log("Request files = null. " + req.files);
-					}
-				} else {
-					console.log("Unknown form submit. " + req.files);
-				}
-
-				var _vars = {
-					'folder': virtualRootURL,
-					'files': getFileMap(relativePath)
-				};
-				exportStandardViewVars(_vars);
-				res.render('folder', _vars);
+				next();
 			}
 		});
 	}
@@ -159,6 +149,41 @@ function setupHandlers(){
 	});
 }
 
+function handleThumbRequest(_abs, res){
+	var absoluteFile = path_normalize(Path.resolve(_abs));
+	var i = absoluteFile.lastIndexOf('/');
+	var parent = absoluteFile.substring(0, i);
+	var file = absoluteFile.substring(i + 1);
+	var thumbfolder = parent + '/.thumbs';
+	var thumbpath = thumbfolder + '/' + file + '.jpg';
+	if(!FS.existsSync(thumbfolder)){
+		FS.mkdirSync(thumbfolder);
+	}
+	if(!FS.existsSync(thumbpath)){
+		createThumb(absoluteFile, thumbpath);
+	}
+	res.sendFile(thumbpath);
+}
+
+function createThumb(video, dest){
+	const { spawnSync } = require('child_process');
+	var args = ['-ss', '00:00:09', '-i', video, '-q:v', '2', '-vf', "scale='iw*256/max(iw,ih):-1'", '-vframes', 1, dest];
+	const ffmpeg = spawnSync('ffmpeg', args);
+}
+
+function decomposeURL(url){
+	var result = {};
+	var i = url.indexOf('?');
+	if(i > 0){
+		result.path = decodeURI(url.substring(0, i));
+		result.query = url.substring(i + 1);
+	} else {
+		result.path = decodeURI(url);
+		result.query = null;
+	}
+	return result;
+}	
+
 function exportStandardViewVars(v){
 	v.FS = FS;
 	v.Path = Path;
@@ -167,6 +192,8 @@ function exportStandardViewVars(v){
 		path_resolveVirtual: path_resolveVirtual,
 		path_normalize: path_normalize,
 	};
+	if(!v._GET) v._GET = null;
+	if(!v._POST) v._POST = null;
 }
 
 function path_resolveVirtual(path){
@@ -179,6 +206,18 @@ function path_resolveVirtual(path){
 	}
 	console.log("Couldn't resolve virtual path: " + path);
 	return null;
+}
+
+function path_join(a, b){
+	var as = a.endsWith("/");
+	var bs = b.startsWith('/'); 
+	if(as && bs){
+		return a + b.substring(1);
+	} else if(as || bs){
+		return a + b;
+	} else {
+		return a + '/' + b;
+	}
 }
 
 function path_normalize(path){
@@ -204,6 +243,22 @@ function parseGETMap(string){
 		GETValueMap[key] = decodeURIComponent(val);
 	}
 	return GETValueMap;
+}
+
+function parseCookies(req){
+	const str = req.get('Cookie');
+	const cookies = {
+	};
+	if(str){
+		const decodedCookieStr = decodeURIComponent(str);
+		const pairs = decodedCookieStr.split(';');
+		for(let i = 0; i < pairs.length; i++) {
+			const pair = pairs[i];
+			const ps = pair.split('=', 2);
+			cookies[ps[0].trim()] = ps[1];
+		}
+	}
+	return cookies;
 }
 
 function getFileMap(folder){

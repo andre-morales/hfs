@@ -18,9 +18,8 @@
 	</script>
 </head>
 <body onload="main();">
-	<a href="/files/">Home.</a>
+	<%- include ('header.ejs') %>
 	<h1>Watch <%-videoName %></h1>
-	<hr>
 	<figure class="video-container">
 		<div class="controls-overlay-wrapper">
 			<div class="controls-overlay">
@@ -166,64 +165,65 @@
 					<tr>
 						<td class="controls-row">
 							<table class="bottom-controls" cellspacing="0">
-								<tr style="width: 100%;">
-									<td>							
-										<button class="button playbutton" onclick="Video.togglePlay();"><span></span></button>
-									</td>
-									<td>
-										<button class="button mutebutton" onclick="Video.toggleMute();"><span></span></button>		
-									</td>
-									<td style="overflow: hidden;">
-										<span style="height:8px;" class="Slider volumeslider" data-min="0" data-value="50" data-max="100"></span>
-										<!--<input type="range" class="volumeslider" value="100" step="any">-->
-									</td>
-									<td style="width: 100%; color: white;">
-										<span class="time">00:00 / 00:00</span>
-									</td>
-									<td>
-										<span class="tt-contextmenu contextmenu-wrapper">
-											<button class="button ttbutton" onclick="Video.TextTracks.openMenu();"><span></span></button>
-											<div class="tt-main-menu contextmenu-content">
-												<div class="contextmenu-title">
-													<span>Text Tracks</span>
+								<tbody>
+									<tr style="width: 100%; height: 100%;">
+										<td>							
+											<button class="button playbutton" onclick="Video.togglePlay();"><span></span></button>
+										</td>
+										<td>
+											<button class="button mutebutton" onclick="Video.toggleMute();"><span></span></button>		
+										</td>
+										<td style="overflow: hidden;">
+											<span style="height:8px;" class="Slider volumeslider" data-min="0" data-value="50" data-max="100"></span>
+										</td>
+										<td style="width: 100%; color: white;">
+											<span class="time">00:00 / 00:00</span>
+										</td>
+										<td>
+											<span class="tt-contextmenu contextmenu-wrapper">
+												<button class="button ttbutton" onclick="Video.TextTracks.openMenu();"><span></span></button>
+												<div class="tt-main-menu contextmenu-content">
+													<div class="contextmenu-title">
+														<span>Text Tracks</span>
+													</div>
+													<hr>
+													<table class="tt-list" cellspacing="0">
+														<tr class="template" id="t_tt-list-item">
+															<td class="contextmenu-item">
+																<label class="noselect checkbox">
+																	<input type="checkbox" class="cc-enable-checkbox"></input>
+																	<span class="cc-label"></span>
+																</label>
+															</td>
+															<td class="contextmenu-item">
+																<button class="morebutton">...</button>
+															</td>	
+														</tr>
+													</table>
+													<hr>
+													<div class="contextmenu-item">
+														<label class="checkbox" style="width: 100%;">
+															<input type="checkbox" class="tt-toggle" onclick="Video.TextTracks.setEnabled(this.checked);"></input>
+															<span>Subtitles</span>
+														</label>
+													</div>
+													<div class="contextmenu-item">
+														<label class="checkbox">
+															<input type="checkbox" class="nativettdisplay-toggle" onclick="Video.TextTracks.setNativeTTDisplay(this.checked);"></input>
+															<span>Native display</span>
+														</label>
+													</div>
 												</div>
-												<hr>
-												<table class="tt-list" cellspacing="0">
-													<tr class="template" id="t_tt-list-item">
-														<td class="contextmenu-item">
-															<label class="noselect checkbox">
-																<input type="checkbox" class="cc-enable-checkbox"></input>
-																<span class="cc-label"></span>
-															</label>
-														</td>
-														<td class="contextmenu-item">
-															<button class="morebutton">...</button>
-														</td>	
-													</tr>
-												</table>
-												<hr>
-												<div class="contextmenu-item">
-													<label class="checkbox" style="width: 100%;">
-														<input type="checkbox" class="tt-toggle" onclick="Video.TextTracks.setEnabled(this.checked);"></input>
-														<span>Subtitles</span>
-													</label>
-												</div>
-												<div class="contextmenu-item">
-													<label class="checkbox">
-														<input type="checkbox" class="nativettdisplay-toggle" onclick="Video.TextTracks.setNativeTTDisplay(this.checked);"></input>
-														<span>Native display</span>
-													</label>
-												</div>
-											</div>
-										</span>
-									</td>
-									<td>
-										<button class="button fullscreenbutton" onclick="Video.toggleFullscreen();"><span></span></button>	
-									</td>
-									<td>
-										<button class="button pinbutton" onclick="Video.togglePinControls();"><span></span></button>	
-									</td>
-								</tr>
+											</span>
+										</td>
+										<td>
+											<button class="button fullscreenbutton" onclick="Video.toggleFullscreen();"><span></span></button>	
+										</td>
+										<td>
+											<button class="button pinbutton" onclick="Video.togglePinControls();"><span></span></button>	
+										</td>
+									</tr>
+								</tbody>
 							</table>
 						</td>
 					</tr>
@@ -231,7 +231,7 @@
 			</div>	
 		</div>
 		<video width="1920" height="1080" preload="metadata" onplay="Video.onPlay();" onpause="Video.onPause();" controls>
-			<source src="<%-_GET['p']%>" type="video/<%-videoExt%>">
+			<source src="<%-_FILE%>" type="video/<%-videoExt%>">
 			<track id="t_track" class="template subtrack" kind="subtitles"></track>
 			Video is not supported on this browser.
 		</video>
@@ -241,11 +241,11 @@
 </html>
 <%
 	function main(){
-		var si = _GET['p'].lastIndexOf("/");
-		var di = _GET['p'].lastIndexOf(".");
-		videoPath = _GET['p'].substring(0, si + 1);
-		videoName = _GET['p'].substring(si + 1, di);
-		videoExt = _GET['p'].substring(di + 1);
+		var si    = _FILE.lastIndexOf("/");
+		var di    = _FILE.lastIndexOf(".");
+		videoPath = _FILE.substring(0, si + 1);
+		videoName = _FILE.substring(si + 1, di);
+		videoExt  = _FILE.substring(di + 1);
 	}
 
 	function genSubtitleLoadCalls(){

@@ -1,5 +1,4 @@
 'use strict';
-var JQUERY;
 
 function ps(slider){
 	var lower = $('<span class="Lower"></span>');
@@ -52,8 +51,6 @@ function ps(slider){
 	};
 
 	var val = asNumber(slider.attr("data-value"), 0);
-	console.log(slider);
-	console.log(val);
 	valueChange(clamp(val, min, max));
 }
 
@@ -86,4 +83,30 @@ function polyfill_util(){
 
 function endsWith(str, suffix) {
 	return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+/* -- Saving/Loading Cookies  -- */
+function getCookie(name) {
+	var cname = name + "=";
+	var decodedCookie = decodeURIComponent(document.cookie);
+	
+	var ca = decodedCookie.split(';');
+	for(var i = 0; i < ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0) == ' ') {
+			c = c.substring(1);
+		}
+		if (c.indexOf(cname) == 0) {
+			return c.substring(cname.length, c.length);
+		}
+	}
+	return "";
+}
+
+function setCookie(name, value, exdays) {
+	var d = new Date();
+	d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+
+	var expires = "expires=" + d.toUTCString();
+	document.cookie = name + "=" + value + ";" + expires + ";samesite=lax;path=/";
 }

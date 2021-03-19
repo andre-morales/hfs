@@ -7,4 +7,5 @@ pkey = cert/dummy.pem
 cert = cert/dummy.crt
 
 [folders]
+/self = .\
 / = http\

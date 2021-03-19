@@ -4,11 +4,23 @@ var contextMenu_edit = null;
 
 function main(){
 	if(!IE5_OR_NEWER) return;
-
-	var wm = document.getElementById("warning-message");
-	wm.parentNode.removeChild(wm);
+	var el = document.getElementById("viewstyle-" + getCookie("viewStyle"));
+	if(el) el.checked = true;	
 
 	polyfill_util();
+
+	var buttons = document.getElementsByTagName("button");
+	for(var i = 0; i < buttons.length; i++){
+		var btn = buttons[i];
+		if(btn.parentNode.className == 'menu-wrapper'){
+			(function(btn){
+				btn.onclick = function(){
+					openContextMenu(btn);
+				}
+			})(btn);
+		}
+		btn.innerHTML = " &gt; ";
+	}
 
 	contextMenu = document.getElementById("context-menu");
 	contextMenu_watch = document.getElementById("cm-watch");
@@ -23,14 +35,19 @@ function main(){
 	});
 }
 
-
+function changeView(style){
+	setCookie('viewStyle', style, 365);
+	location.reload();
+}
 
 function openContextMenu(ctx){
 	if(!IE5_OR_NEWER) return;
 
 	contextMenuW = ctx.parentElement;
+	console.log(contextMenuW);
+	console.log(contextMenu);
 	contextMenuW.appendChild(contextMenu);
-	contextMenuPath = contextMenuW.getAttribute("data-path");
+	contextMenuPath = contextMenuW.parentElement.getAttribute("data-path");
 
 	if(isVideo(contextMenuPath)){
 		addClass(contextMenu, "watchable");
@@ -53,7 +70,7 @@ function isFolder(file){
 }
 
 function isVideo(file){
-	return endsWith(file, ".mp4") || endsWith(file, ".webm");
+	return endsWith(file, ".mp4") || endsWith(file, ".webm") || endsWith(file, ".mkv");
 }
 
 function cm_close(){
@@ -62,11 +79,9 @@ function cm_close(){
 }
 
 function watch(){
-	var link = "/v/watch?p=" + encodeURIComponent(folder + contextMenuPath);
-	window.location.href = link;
+	window.location.href = contextMenuPath + "?v=watch";
 }
 
 function edit(){
-	var link = "/v/edit?p=" + encodeURIComponent(folder + contextMenuPath);
-	window.location.href = link;
+	window.location.href = contextMenuPath + "?v=edit";
 }

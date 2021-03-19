@@ -1,0 +1,52 @@
+<table id="cls-view" cellspacing="0">
+	<tbody>
+	<%
+		genFileTableEntries();
+	%>
+	</tbody>
+</table>
+
+<%
+function genFileTableEntries(){
+	for (var i = 0; i < files.length; i++){
+		var pathName = files[i];
+
+		var color = (i % 2 == 1)?'color-1':'color-2';
+
+		if(pathName.endsWith('/')){
+			var folderName = pathName.slice(0, -1);
+			var pathURIName = encodeURIComponent(folderName);
+			genFileTableEntry(folderName, pathURIName + "/", 'folder', color);
+		} else {	
+			var iconName = 'file';
+			if(strIsVideo(pathName)) {
+				var iconName = 'video';
+			} else if(strIsImage(pathName)) {
+				var iconName = 'picture';
+			}
+			var pathURIName = encodeURIComponent(pathName);
+			genFileTableEntry(pathName, pathURIName, iconName, color);
+		}
+	}
+}
+
+function genFileTableEntry(name, path, icon, rowColor){
+	%>
+		<tr class="file <%-rowColor-%>">
+			<td class="file-menu" data-path="<%-path%>">
+				<span class="menu-wrapper">
+					<button></button>
+				</span>
+			</td>
+			<td class="file-img">
+				<a href="<%-path%>">
+					<img src="/res/file_icons/<%-icon%>.gif" width="32" height="32"/>
+				</a>
+			</td>
+			<td class="file-link">
+				<a href="<%-path%>"><%-name%></a>
+			</td>
+		</tr>
+	<%
+}
+%>
