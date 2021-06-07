@@ -1,1 +1,1 @@
-"%NODE_HOME%\node.exe" %*
+"%NODE_PATH%\node.exe" %*

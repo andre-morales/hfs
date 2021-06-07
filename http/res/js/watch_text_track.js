@@ -253,3 +253,31 @@ function Text_TrackEditor(){
 		updateCueWindowStyle(this.ttId);
 	}
 }
+
+/* -- Save/Load CC status -- */
+function saveCCStatus(){
+	var ttc = {};
+	for(var i in Video.textTracks){
+		if(Video.textTracks.hasOwnProperty(i)){
+			ttc[i] = Video.textTracks[i].config;
+		}
+	}
+	var cookie = JSON.stringify(ttc);
+	localStorage.setItem("ttc", cookie);
+}
+
+function loadCCStatus(){
+	var cookie = localStorage.getItem("ttc");
+	if(!cookie) return;
+
+	var configMaster = JSON.parse(cookie);
+	if(configMaster){
+		for(var i in configMaster){
+			var tt = Video.textTracks[i];
+			var ttc = configMaster[i];
+			if(tt && ttc){
+				tt.config.fromJSON(ttc);
+			}
+		}	
+	}
+}

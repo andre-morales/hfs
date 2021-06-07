@@ -1,0 +1,37 @@
+<% main(); %>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+	<%- include ('head.ejs') %>
+
+	<title>HFS - André</title>
+	<link rel="stylesheet" href="/res/css/edit_style.css" type="text/css">
+	<script src="/res/js/edit_script.js"></script>
+</head>
+<body onload="main();">
+	<%- include ('header.ejs') %>
+	<h1>Control</h1>
+	<hr/>
+	<form enctype="multipart/form-data" action="/?v=control" method="POST">
+		<span>HFS controls</span>
+		<br/>
+		<input type="submit" name="Reload" value="Reload"/>
+		<br/>
+		
+		<br/>
+		<span>PC controls</span>
+		<br/>
+		<input type="submit" name="Sleep" value="Sleep"/>
+		
+	</form>
+	<%- include ('footer.ejs') %>
+</body>
+</html>
+<%
+	function main(){
+	}
+
+	function echo(s){ %><%-s%><% }
+%>

@@ -11,7 +11,16 @@ function main(){
 	}
 
 	txtEditor = document.getElementById("text").children[0];
+	var lf = (TEXT.match(/\n/g) || []).length;
+	var crlf = (TEXT.match(/\r\n/g) || []).length;
+	if(crlf >= lf){
+		document.getElementById("line-endings-crlf").checked = true;
+	} else {
+		document.getElementById("line-endings-lf").checked = true;
+	}
+	txtEditor.value = TEXT;
 	
+
 	txtEditor.scrollTop = ck;
 	txtLineNumbers = document.getElementById("line-numbers").children[0];
 	txtLineNumbers.value = "";

@@ -1,3 +1,9 @@
+[GLOBAL]
+trash = recycle_bin\
+
+[plugins]
+ffmpeg = C:\Program Files\FFmpeg\bin\ffmpeg.exe
+
 [http]
 port = 1100
 

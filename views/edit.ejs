@@ -5,20 +5,16 @@
 <head>
 
 	<%- include ('head.ejs') %>
-
 	<title>HFS - André</title>
 	<link rel="stylesheet" href="/res/css/edit_style.css" type="text/css">
+	<script>
+		TEXT = decodeURIComponent("<%- fileText %>");
+	</script>
 	<script src="/res/js/edit_script.js"></script>
 </head>
 <body onload="main();">
-
-
 	<%- include ('header.ejs') %>
-	<%
-		if(_POST && _POST.text){
-			FS.writeFileSync(resolvedPath, _POST.text);
-		}
-	%>
+
 	<table id="path-toolbar" cellspacing="0" style="width: 100%;">
 		<tbody>
 			<tr>
@@ -52,11 +48,14 @@
 						<textarea wrap="off" rows="20" spellcheck="false">1</textarea>
 					</td>
 					<td id="text">
-						<textarea wrap="off" rows="20" spellcheck="false" name="text"><%=FS.readFileSync(resolvedPath)%></textarea>
+						<textarea id="textarea" wrap="off" rows="20" spellcheck="false" name="text"></textarea>
 					</td>
 				</tr>
 			</table>
 		</div>
+		<input id="line-endings-lf" type="radio" name="lineEnding" value="lf">LF (Linux)</input>
+		<input id="line-endings-crlf" type="radio" name="lineEnding" value="crlf">CR/LF (Windows)</input>
+		<br/>
 		<input type="submit" value="Save"/>
 	</form>
 	<%- include ('footer.ejs') %>
@@ -64,6 +63,17 @@
 </html>
 <%
 	function main(){
+		if(_POST && _POST.text){
+			var text = _POST.text;
+			var le = _POST.lineEnding;
+			console.log(le);
+			if(_POST.lineEnding == 'lf'){
+				FS.writeFileSync(resolvedPath, _POST.text.replaceAll('\r\n', '\n'));
+			} else {
+				FS.writeFileSync(resolvedPath, _POST.text);	
+			}
+		}
+
 		fileFullPath = _FILE;
 
 		var si       = _FILE.lastIndexOf("/");
@@ -74,6 +84,7 @@
 		fileFullName = _FILE.substring(si + 1);
 		fileName     = _FILE.substring(si + 1, di);
 		fileExt      = _FILE.substring(di + 1);
+		fileText     = encodeURIComponent(FS.readFileSync(resolvedPath));
 	}
 
 	function echo(s){ %><%-s%><% }

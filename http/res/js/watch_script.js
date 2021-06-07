@@ -59,9 +59,10 @@ var Video = {
 			else if (document.msExitFullscreen) document.msExitFullscreen();
 		} else {
 			var vc = this.$container[0];
-			if (vc.requestFullscreen) vc.requestFullscreen();
-			else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen();
-			else if (vc.msRequestFullscreen) vc.msRequestFullscreen();
+			var opt = { navigationUI: 'hide' };
+			if (vc.requestFullscreen) vc.requestFullscreen(opt);
+			else if (vc.webkitRequestFullScreen) vc.webkitRequestFullScreen(opt);
+			else if (vc.msRequestFullscreen) vc.msRequestFullscreen(opt);
 		}
 	},
 	togglePlay: function(){
@@ -405,35 +406,6 @@ function cwc_reset(){
 	Video.TextTrackEditor.currentConfig().reset();
 	Video.TextTrackEditor.openFor(Video.TextTrackEditor.ttId);
 	updateCueWindowStyle(Video.TextTrackEditor.ttId);
-}
-
-/* -- Save/Load CC status -- */
-function saveCCStatus(){
-	var ttc = {};
-	for(var i in Video.textTracks){
-		if(Video.textTracks.hasOwnProperty(i)){
-			ttc[i] = Video.textTracks[i].config;
-		}
-	}
-	var cookie = JSON.stringify(ttc);
-	//console.log(cookie);
-	setCookie("ttc", cookie, 365);
-}
-
-function loadCCStatus(){
-	var cookie = getCookie("ttc");
-	if(!cookie) return;
-
-	var configMaster = JSON.parse(cookie);
-	if(configMaster){
-		for(var i in configMaster){
-			var tt = Video.textTracks[i];
-			var ttc = configMaster[i];
-			if(tt && ttc){
-				tt.config.fromJSON(ttc);
-			}
-		}	
-	}
 }
 
 /* -- Template function -- */

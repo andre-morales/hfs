@@ -44,8 +44,6 @@ function openContextMenu(ctx){
 	if(!IE5_OR_NEWER) return;
 
 	contextMenuW = ctx.parentElement;
-	console.log(contextMenuW);
-	console.log(contextMenu);
 	contextMenuW.appendChild(contextMenu);
 	contextMenuPath = contextMenuW.parentElement.getAttribute("data-path");
 
@@ -70,7 +68,7 @@ function isFolder(file){
 }
 
 function isVideo(file){
-	return endsWith(file, ".mp4") || endsWith(file, ".webm") || endsWith(file, ".mkv");
+	return endsWith(file, ".mp4") || endsWith(file, ".webm") || endsWith(file, ".mkv") || endsWith(file, ".3gp");
 }
 
 function cm_close(){
@@ -84,4 +82,8 @@ function watch(){
 
 function edit(){
 	window.location.href = contextMenuPath + "?v=edit";
+}
+
+function delete_(){
+	window.location.href = contextMenuPath + "?v=delete";
 }

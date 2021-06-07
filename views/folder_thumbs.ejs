@@ -2,13 +2,19 @@
 	<td>
 		<div id="sbs-view">
 			<% genFileTableEntries(); %>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
 		</div>
 	</td>
 </table>
@@ -29,7 +35,7 @@ function genFileTableEntries(){
 			if(strIsVideo(pathName)) {
 				var iconName = pathURIName + "?v=thumb";
 			} else if(strIsImage(pathName)) {
-				var iconName = '/res/file_icons/picture.gif';
+				var iconName = pathName;
 			}
 			genFileTableEntry(pathName, pathURIName, iconName, color);
 		}
@@ -38,7 +44,7 @@ function genFileTableEntries(){
 
 function genFileTableEntry(name, path, image, rowColor){
 	%>
-		<span class="file" data-path="<%-path%>">
+		<span class="file-box file" data-path="<%-path%>">
 			<span class="menu-wrapper">
 				<button></button>
 			</span>

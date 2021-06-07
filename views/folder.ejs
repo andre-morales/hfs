@@ -73,9 +73,9 @@
 	</div>
 	<div id="context-menu">
 		<a id="cm-close" href="javascript:cm_close();">Close</a>
-		<a id="cm-edit">Edit</a>
+		<a id="cm-edit">Edit as Text</a>
 		<a id="cm-watch">Watch</a>
-		<a href="javascript:;">Delete</a>
+		<a id="cm-delete" href="javascript:delete_();">Delete</a>
 	</div>
 	<%- include ('footer.ejs') %>
 </body>
@@ -83,7 +83,7 @@
 <%
 	function main(){
 		strIsVideo = function(f){
-			return f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv');
+			return f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv') || f.endsWith('.3gp');
 		}
 		strIsImage = function(f){
 			return f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.gif') || f.endsWith('.ico');

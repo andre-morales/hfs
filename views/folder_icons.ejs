@@ -2,13 +2,19 @@
 	<td>
 		<div id="sbs-view">
 			<% genFileTableEntries(); %>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
-			<span class="empty"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
+			<span class="file-box"></span>
 		</div>
 	</td>
 </table>
@@ -39,11 +45,13 @@ function genFileTableEntries(){
 
 function genFileTableEntry(name, path, image, rowColor){
 	%>
-		<span class="file" data-path="<%-path%>">
-			<span class="menu-wrapper">
-				<button></button>
+		<span class="file-box file">
+			<span class="center" data-path="<%-path%>">
+				<span class="menu-wrapper">
+					<button></button>
+				</span>
+				<a href="<%-path%>" class="file-img"><img src="<%-image%>"/></a>	
 			</span>
-			<a href="<%-path%>" class="file-img"><img src="<%-image%>"/></a>
 			<a href="<%-path%>" class="file-name"><%-name%></a>
 		</span>
 	<%
